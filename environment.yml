@@ -1,0 +1,14 @@
+name: simple-worm-scripts
+
+channels:
+  - conda-forge
+  - pytorch
+
+dependencies:
+  - python = 3.9
+  - fenics = 2019.1.0
+  - numpy = 1.26
+  - git
+  - pip
+  - pip:
+      - git+https://gitlab.com/tom-ranner/simple-worm.git@master

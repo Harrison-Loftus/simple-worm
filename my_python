@@ -1,0 +1,8 @@
+#!/bin/bash
+
+docker run -it --rm \
+    -v $(pwd):/scripts -w /scripts\
+    -v $(pwd)/.cache:/cache \
+    -e DIJITSO_CACHE_DIR=/cache \
+    simple-worm-scripts \
+    python $@
