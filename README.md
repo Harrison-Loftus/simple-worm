@@ -8,9 +8,9 @@
 
 - Create a conda environment:
 
-  ```sh
+```sh
 $ conda env create -f environment.yml
-  ```
+```
 
 ## Running code using conda (linux or macos):
 
