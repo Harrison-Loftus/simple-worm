@@ -5,10 +5,13 @@ channels:
   - pytorch
 
 dependencies:
-  - python = 3.9
-  - fenics = 2019.1.0
-  - numpy = 1.26
+  - python = 3.12
+  - fenics-dolfinx = 0.9
+  - numpy >= 2.0
+  - matplotlib
+  - pytest
   - git
   - pip
   - pip:
       - git+https://gitlab.com/tom-ranner/simple-worm.git@master
+

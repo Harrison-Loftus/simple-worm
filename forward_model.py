@@ -14,7 +14,7 @@ from simple_worm.util import f2n, v2f
 
 # Parameters
 N = 100  # Number of body points - recommend ~100
-T = 1.0e-2  # Final time - recommend several undulations
+T = 10.0  # Final time - recommend several undulations
 dt = 1.0e-3  # Time step - recommend ~1.0e-2 or lower
 n_timesteps = int(T / dt)
 
@@ -74,12 +74,12 @@ def example1():
         normal = ret.e1
 
         # scalar curvature
-        alpha = ufl.dot(vector_curvature, normal)
+        #alpha = ufl.dot(vector_curvature, normal)
 
         # using the variables to compute interesting quantities
-        curvature_form = fem.form(0.5 * alpha**2 * ufl.dx)
-        total_curvature = fem.assemble_scalar(curvature_form)
-        print(t, total_curvature)
+        #curvature_form = fem.form(0.5 * alpha**2 * ufl.dx)
+        #total_curvature = fem.assemble_scalar(curvature_form)
+        #print(t, total_curvature)
 
         ret_np = ret.to_numpy()
         x_np = ret_np.x
