@@ -12,9 +12,11 @@ from simple_worm.controls import (
 from simple_worm.worm import Worm
 from simple_worm.util import f2n, v2f
 
+from kymograph import *
+
 # Parameters
 N = 100  # Number of body points - recommend ~100
-T = 10.0e-3  # Final time - recommend several undulations
+T = 3.0  # Final time - recommend several undulations
 dt = 1.0e-3  # Time step - recommend ~1.0e-2 or lower
 n_timesteps = int(T / dt)
 
@@ -53,6 +55,9 @@ def example1():
         return 0.0 * u[0]
 
     t = 0.0
+
+    curvatures = []
+
     while t < T:
         t += dt
 
@@ -85,7 +90,12 @@ def example1():
         x_np = ret_np.x
         curvature_np = ret_np.alpha
 
-        plot_curve(x_np)
+        # plot_curve(x_np)
+        curvatures.append(curvature_np.copy())
+
+    curvatures_np = np.array(curvatures)
+    
+    return curvatures_np.T
 
 
 def example2():
@@ -145,4 +155,20 @@ def example2():
 
 
 if __name__ == "__main__":
-    example1()
+    curvatures = example1()
+
+    heights = [i/N for i in range(N)]
+    t_eval = np.arange(0, T, dt)
+   
+
+    times, kappa_peaks = finding_peaks(curvatures, t_eval, N)
+    wavelength, selection_time = lin_reg_wavelength(kappa_peaks, times, N)
+
+    print("Wavelength via kymogram: ", wavelength)
+    
+    plt.figure(figsize=(8,4))
+    plt.imshow(curvatures.T, aspect='auto', extent=[0, T, heights[0], heights[-1]], origin='lower', cmap='bwr')
+    plt.colorbar(label='curvature')
+    plt.xlabel('Time')
+    plt.ylabel('Body length')
+    plt.show()

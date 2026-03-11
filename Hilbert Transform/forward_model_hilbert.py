@@ -11,10 +11,11 @@ from simple_worm.controls import (
 )
 from simple_worm.worm import Worm
 from simple_worm.util import f2n, v2f
+from hilbert_calc import Hilbert_Transform
 
 # Parameters
 N = 100  # Number of body points - recommend ~100
-T = 10.0e-3  # Final time - recommend several undulations
+T = 1.0  # Final time - recommend several undulations
 dt = 1.0e-3  # Time step - recommend ~1.0e-2 or lower
 n_timesteps = int(T / dt)
 
@@ -53,6 +54,9 @@ def example1():
         return 0.0 * u[0]
 
     t = 0.0
+
+    curvatures = []
+
     while t < T:
         t += dt
 
@@ -85,7 +89,12 @@ def example1():
         x_np = ret_np.x
         curvature_np = ret_np.alpha
 
-        plot_curve(x_np)
+        # plot_curve(x_np)
+        curvatures.append(curvature_np.copy())
+
+    curvatures_np = np.array(curvatures)
+    
+    return curvatures_np.T
 
 
 def example2():
@@ -145,4 +154,7 @@ def example2():
 
 
 if __name__ == "__main__":
-    example1()
+    curvatures = example1()
+    print(curvatures.shape)
+    wavelength = Hilbert_Transform(curvatures, N)
+    print("Wavelength: ", wavelength)

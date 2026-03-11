@@ -1,6 +1,10 @@
+import matplotlib
+matplotlib.use("TkAgg")   
+
 from numpy.linalg import norm
 from dolfinx import fem
 from matplotlib import pyplot as plt
+import matplotlib.animation as animate
 import numpy as np
 import ufl
 
@@ -12,10 +16,12 @@ from simple_worm.controls import (
 from simple_worm.worm import Worm
 from simple_worm.util import f2n, v2f
 
+from Animate_Worm import *
+
 # Parameters
 N = 100  # Number of body points - recommend ~100
-T = 10.0e-3  # Final time - recommend several undulations
-dt = 1.0e-3  # Time step - recommend ~1.0e-2 or lower
+T = 3.0  # Final time - recommend several undulations
+dt = 1.0e-2  # Time step - recommend ~1.0e-2 or lower
 n_timesteps = int(T / dt)
 
 
@@ -52,6 +58,8 @@ def example1():
     def zero_forcing(u):
         return 0.0 * u[0]
 
+    worm_positions = []
+
     t = 0.0
     while t < T:
         t += dt
@@ -64,6 +72,8 @@ def example1():
                 gamma=v2f(zero_forcing, fs=worm.Q),
             )
         )
+
+        
 
         # output variables as 'fenics functions
         x = ret.x
@@ -83,9 +93,13 @@ def example1():
 
         ret_np = ret.to_numpy()
         x_np = ret_np.x
+        x_np_frame = x_np.T
         curvature_np = ret_np.alpha
 
-        plot_curve(x_np)
+        worm_positions.append(x_np_frame.copy())
+
+        #plot_curve(x_np)
+    return worm_positions
 
 
 def example2():
@@ -145,4 +159,9 @@ def example2():
 
 
 if __name__ == "__main__":
-    example1()
+    worm_positions = example1()
+    anim = create_worm_animation(worm_positions, dt, plane='xz')
+    plt.show()
+    anim.save("worm animation.mp4", writer="ffmpeg", fps=int(1/dt), dpi=150, extra_args=["-vcodec", "libx264"])
+   
+    
