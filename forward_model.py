@@ -38,14 +38,14 @@ def example1():
 
     # wave parameters
     A = 10.0
-    lam = 1.5
+    lam = 0.66
     omega = 1.0
 
     # specific forcing function
     def alpha_forcing(t):
         def alpha_forcing_t(u_):
             u = u_[0]  # convert 3d coordinate to 1d
-            return A * np.sin(2.0 * np.pi * lam * u - 2 * np.pi * omega * t)
+            return A * np.sin(2.0 * np.pi / lam * u - 2 * np.pi * omega * t)
 
         return alpha_forcing_t
 

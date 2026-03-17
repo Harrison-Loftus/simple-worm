@@ -18,12 +18,20 @@ from simple_worm.util import f2n, v2f
 
 from Animate_Worm import *
 
+from model_break_odes import *
+
 # Parameters
-N = 100 # Number of body points - recommend ~100
-T = 1.0  # Final time - recommend several undulations
+N = 6  # Number of body points - recommend ~100
+T = 10.0  # Final time - recommend several undulations
 dt = 1.0e-3  # Time step - recommend ~1.0e-2 or lower
 n_timesteps = int(T / dt)
 
+ODE_state = np.zeros(5*n)
+ODE_state[3*N] = 1.0
+ODE_state[4*N] = -1.0
+ODE_time = 0.0
+
+s = np.linspace(0.0,1.0,N)
 
 def plot_curve(x, filename="_tmp.png"):
     plt.figure(1)
@@ -32,6 +40,25 @@ def plot_curve(x, filename="_tmp.png"):
     plt.axis("equal")
     plt.savefig(filename)
 
+def step_ode(dt):
+    global ODE_state, ODE_time, kappa_current
+
+    sol = solve_ivp(ODEs,
+                    (ODE_time, ODE_time + dt),
+                    ODE_state,
+                    method="RK23",
+                    max_step=dt)
+
+    ODE_state = sol.y[:, -1]
+    ODE_time += dt
+
+    # extract curvature for this timestep
+    kappa_current = ODE_state[0:N]
+
+def curvature_at_u(u):
+    kappa_idx = [np.argmin(u_val - s) for u_val in u]
+    kappa = ODE_state[kappa_idx]
+    return kappa
 
 def example1():
     """
@@ -44,18 +71,16 @@ def example1():
 
     # wave parameters
     
-    lam = 2.0
+    lam = 0.66
     A = 10.0 * 0.66 / lam
     omega = 1.0
 
     # specific forcing function
     def alpha_forcing(t):
         def alpha_forcing_t(u_):
-            u = u_[0]  # convert 3d coordinate to 1d
-            print(u.shape)
-            print(u)
-            return A * np.sin(2.0 * np.pi / lam * u - 2 * np.pi * omega * t)
-
+            u = u_[0]      # parametric coordinate along worm
+            kappas = curvature_at_u(u)
+            return kappas
         return alpha_forcing_t
 
     def zero_forcing(u):
@@ -66,7 +91,7 @@ def example1():
     t = 0.0
     while t < T:
         t += dt
-
+        step_ode(dt)
         # solve
         ret = worm.update_solution(
             ControlsFenics(
@@ -105,60 +130,6 @@ def example1():
     return worm_positions
 
 
-def example2():
-    """
-    This example shows how to call the simulator with a fenics function
-    for forcing.
-    """
-    N = 120
-    # holders for 'worm', u and control
-    worm = Worm(N, dt)
-    worm.initialise()
-
-    # controls holder but we will only use 7 different values
-    N_controls = 6
-    control = np.empty(N)
-
-    # holder for other control directions
-    zeroN = np.zeros(N)
-    zeroNm = np.zeros(N - 1)
-
-    # wave parameters
-    A = 10.0
-    lam = 1.5
-    omega = 1.0
-
-    # specific forcing function
-    def alpha_forcing(t, j):
-        # j is point in numpy array
-        # j_control is the corresponding control point
-        j_control = (j * N_controls) // N
-        # u_control is center point of control region
-        u_control = (j_control + 0.5) / N_controls
-        return A * np.sin(2.0 * np.pi * lam * u_control - 2 * np.pi * omega * t)
-
-    t = 0.0
-    while t < T:
-        t += dt
-
-        # update control
-        control[:] = [alpha_forcing(t, j) for j in range(N)]
-
-        # solve
-        C = ControlsNumpy(alpha=control, beta=zeroN, gamma=zeroNm)
-        ret = worm.update_solution(C.to_fenics(worm))
-
-        # output variables as 'fenics functions
-        # x = ret.x
-        # curvature = ret.alpha
-
-        ret_np = ret.to_numpy()
-        x_np = ret_np.x
-        curvature_np = ret_np.alpha
-
-        print(f"{x_np=}")
-        print(f"{curvature_np=}")
-        plot_curve(x_np)
 
 
 if __name__ == "__main__":

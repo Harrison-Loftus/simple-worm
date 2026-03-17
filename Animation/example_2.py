@@ -1,6 +1,10 @@
+import matplotlib
+matplotlib.use("TkAgg")   
+
 from numpy.linalg import norm
 from dolfinx import fem
 from matplotlib import pyplot as plt
+import matplotlib.animation as animate
 import numpy as np
 import ufl
 
@@ -12,12 +16,12 @@ from simple_worm.controls import (
 from simple_worm.worm import Worm
 from simple_worm.util import f2n, v2f
 
-from kymograph import *
+from Animate_Worm import *
 
 # Parameters
 N = 100  # Number of body points - recommend ~100
-T = 10.0  # Final time - recommend several undulations
-dt = 1.0e-2  # Time step - recommend ~1.0e-2 or lower
+T = 3.0  # Final time - recommend several undulations
+dt = 1.0e-3  # Time step - recommend ~1.0e-2 or lower
 n_timesteps = int(T / dt)
 
 
@@ -39,8 +43,9 @@ def example1():
     worm.initialise()
 
     # wave parameters
-    A = 10.0
-    lam = 0.66
+    
+    lam = 2.0
+    A = 10.0 * 0.66 / lam
     omega = 1.0
 
     # specific forcing function
@@ -54,10 +59,9 @@ def example1():
     def zero_forcing(u):
         return 0.0 * u[0]
 
+    worm_positions = []
+
     t = 0.0
-
-    curvatures = []
-
     while t < T:
         t += dt
 
@@ -69,6 +73,8 @@ def example1():
                 gamma=v2f(zero_forcing, fs=worm.Q),
             )
         )
+
+        
 
         # output variables as 'fenics functions
         x = ret.x
@@ -88,14 +94,13 @@ def example1():
 
         ret_np = ret.to_numpy()
         x_np = ret_np.x
+        x_np_frame = x_np.T
         curvature_np = ret_np.alpha
 
-        # plot_curve(x_np)
-        curvatures.append(curvature_np.copy())
+        worm_positions.append(x_np_frame.copy())
 
-    curvatures_np = np.array(curvatures)
-    
-    return curvatures_np.T
+        #plot_curve(x_np)
+    return worm_positions
 
 
 def example2():
@@ -117,8 +122,9 @@ def example2():
     zeroNm = np.zeros(N - 1)
 
     # wave parameters
-    A = 10.0
+    
     lam = 1.5
+    A = 10.0 * 0.66 / lam
     omega = 1.0
 
     # specific forcing function
@@ -128,7 +134,9 @@ def example2():
         j_control = (j * N_controls) // N
         # u_control is center point of control region
         u_control = (j_control + 0.5) / N_controls
-        return A * np.sin(2.0 * np.pi * lam * u_control - 2 * np.pi * omega * t)
+        return A * np.sin(2.0 * np.pi / lam * u_control - 2 * np.pi * omega * t)
+    
+    worm_positions = []
 
     t = 0.0
     while t < T:
@@ -149,26 +157,22 @@ def example2():
         x_np = ret_np.x
         curvature_np = ret_np.alpha
 
-        print(f"{x_np=}")
-        print(f"{curvature_np=}")
-        plot_curve(x_np)
+        #print(f"{x_np=}")
+        #print(f"{curvature_np=}")
+        #plot_curve(x_np)
+
+        x_np_frame = x_np.T
+        curvature_np = ret_np.alpha
+
+        worm_positions.append(x_np_frame.copy())
+
+    return worm_positions
 
 
 if __name__ == "__main__":
-    curvatures = example1()
-
-    heights = [i/N for i in range(N)]
-    t_eval = np.arange(0, T, dt)
-   
-
-    times, kappa_peaks = finding_peaks(curvatures, t_eval, N)
-    wavelength, selection_time = lin_reg_wavelength(kappa_peaks, times, N)
-
-    print("Wavelength via kymogram: ", wavelength)
-    
-    plt.figure(figsize=(8,4))
-    plt.imshow(curvatures.T, aspect='auto', extent=[0, T, heights[0], heights[-1]], origin='lower', cmap='bwr')
-    plt.colorbar(label='curvature')
-    plt.xlabel('Time')
-    plt.ylabel('Body length')
+    worm_positions = example2()
+    anim = create_worm_animation(worm_positions, dt, plane='xz')
     plt.show()
+    anim.save("worm animation.mp4", writer="ffmpeg", fps=int(1/dt), dpi=150, extra_args=["-vcodec", "libx264"])
+   
+    
