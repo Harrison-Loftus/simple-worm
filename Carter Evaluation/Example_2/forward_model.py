@@ -10,16 +10,23 @@ from simple_worm.controls import (
     ControlSequenceFenics,
 )
 from simple_worm.worm import Worm
-from simple_worm.util import f2n, v2f
-
+from simple_worm.util import f2n, v2f#
+from Animate_Worm import *
+from hilbert_calc import *
 from kymograph import *
-
+from Carter_ODEs import *
 # Parameters
-N = 6  # Number of body points - recommend ~100
+
 T = 10.0  # Final time - recommend several undulations
 dt = 1.0e-2  # Time step - recommend ~1.0e-2 or lower
 n_timesteps = int(T / dt)
 
+ODE_state = np.zeros(5*N)
+ODE_state[3*N] = 1.0
+ODE_state[4*N] = -1.0
+ODE_time = 0.0
+
+s = np.linspace(0.0,1.0,N)
 
 def plot_curve(x, filename="_tmp.png"):
     plt.figure(1)
@@ -28,74 +35,26 @@ def plot_curve(x, filename="_tmp.png"):
     plt.axis("equal")
     plt.savefig(filename)
 
+def step_ode(dt):
+    global ODE_state, ODE_time, kappa_current
 
-def example1():
-    """
-    This example shows how to call the simulator with a fenics function
-    for forcing.
-    """
-    # holders for 'worm', u and control
-    worm = Worm(N, dt)
-    worm.initialise()
+    sol = solve_ivp(ODEs,
+                    (ODE_time, ODE_time + dt),
+                    ODE_state,
+                    method="RK23",
+                    max_step=dt)
 
-    # wave parameters
-    A = 10.0
-    lam = 0.66
-    omega = 1.0
+    ODE_state = sol.y[:, -1]
+    ODE_time += dt
 
-    # specific forcing function
-    def alpha_forcing(t):
-        def alpha_forcing_t(u_):
-            u = u_[0]  # convert 3d coordinate to 1d
-            return A * np.sin(2.0 * np.pi / lam * u - 2 * np.pi * omega * t)
+    # extract curvature for this timestep
+    kappa_current = ODE_state[0:N]
 
-        return alpha_forcing_t
 
-    def zero_forcing(u):
-        return 0.0 * u[0]
-
-    t = 0.0
-
-    curvatures = []
-
-    while t < T:
-        t += dt
-
-        # solve
-        ret = worm.update_solution(
-            ControlsFenics(
-                alpha=v2f(alpha_forcing(t), fs=worm.V),
-                beta=v2f(zero_forcing, fs=worm.V),
-                gamma=v2f(zero_forcing, fs=worm.Q),
-            )
-        )
-
-        # output variables as 'fenics functions
-        x = ret.x
-        vector_curvature = ret.kappa_expr
-
-        # other variables computed
-        tangent = ret.e0
-        normal = ret.e1
-
-        # scalar curvature
-        #alpha = ufl.dot(vector_curvature, normal)
-
-        # using the variables to compute interesting quantities
-        #curvature_form = fem.form(0.5 * alpha**2 * ufl.dx)
-        #total_curvature = fem.assemble_scalar(curvature_form)
-        #print(t, total_curvature)
-
-        ret_np = ret.to_numpy()
-        x_np = ret_np.x
-        curvature_np = ret_np.alpha
-
-        # plot_curve(x_np)
-        curvatures.append(curvature_np.copy())
-
-    curvatures_np = np.array(curvatures)
-    
-    return curvatures_np.T
+def curvature_at_u(u):
+    kappa_idx = np.argmin(np.abs(u - s)) 
+    kappa = ODE_state[kappa_idx]
+    return kappa
 
 
 def example2():
@@ -103,13 +62,12 @@ def example2():
     This example shows how to call the simulator with a fenics function
     for forcing.
     """
-    N = 120
+    
     # holders for 'worm', u and control
     worm = Worm(N, dt)
     worm.initialise()
 
     # controls holder but we will only use 7 different values
-    N_controls = 6
     control = np.empty(N)
 
     # holder for other control directions
@@ -118,24 +76,31 @@ def example2():
 
     # wave parameters
     A = 10.0
-    lam = 1.5
+    lam = 0.66
     omega = 1.0
 
     # specific forcing function
     def alpha_forcing(t, j):
+        
         # j is point in numpy array
         # j_control is the corresponding control point
         j_control = (j * N_controls) // N
+        
         # u_control is center point of control region
         u_control = (j_control + 0.5) / N_controls
-        return A * np.sin(2.0 * np.pi * lam * u_control - 2 * np.pi * omega * t)
+        a = curvature_at_u(u_control)
+        
+        return a
 
     t = 0.0
+    kappas = []
+    worm_positions = []
     while t < T:
         t += dt
-
+        step_ode(dt)
         # update control
         control[:] = [alpha_forcing(t, j) for j in range(N)]
+
 
         # solve
         C = ControlsNumpy(alpha=control, beta=zeroN, gamma=zeroNm)
@@ -147,28 +112,50 @@ def example2():
 
         ret_np = ret.to_numpy()
         x_np = ret_np.x
+        x_np_frame = x_np.T
+        
         curvature_np = ret_np.alpha
-
-        print(f"{x_np=}")
-        print(f"{curvature_np=}")
-        plot_curve(x_np)
+        
+        #print(f"{x_np=}")
+        #print(f"{curvature_np=}")
+        #plot_curve(x_np)
+        worm_positions.append(x_np_frame.copy())
+        kappas.append(curvature_np.copy())
+    kappas = np.array(kappas)
+    worm_positions = np.array(worm_positions)
+    return worm_positions, kappas.T
 
 
 if __name__ == "__main__":
-    curvatures = example1()
-    print(curvatures.shape)
+
+    worm_positions, curvatures = example2()
+    
+    
+    #----------Kymogram--------------
     heights = [i/N for i in range(N)]
+    heights=np.array(heights)
+    
     t_eval = np.arange(0, T, dt)
-   
+    print("t_eval length:", len(t_eval))
 
     times, kappa_peaks = finding_peaks(curvatures, t_eval, N)
-    wavelength, selection_time = lin_reg_wavelength(kappa_peaks, times, N)
+    """wavelength, selection_time = lin_reg_wavelength(kappa_peaks, times, N)
 
     print("Wavelength via kymogram: ", wavelength)
-    
+    """
     plt.figure(figsize=(8,4))
     plt.imshow(curvatures, aspect='auto', extent=[0, T, heights[0], heights[-1]], origin='lower', cmap='bwr')
     plt.colorbar(label='curvature')
     plt.xlabel('Time')
     plt.ylabel('Body length')
     plt.show()
+
+
+    #---------Hilber Transform----------
+    wavelength = Hilbert_Transform(curvatures, N, N_controls)
+    print("Wavelength via Hilbert transform: ", wavelength)
+
+    #----------Animation----------------
+    anim = create_worm_animation(worm_positions, dt, plane='xz')
+    plt.show()
+    anim.save("worm animation.mp4", writer="ffmpeg", fps=int(1/dt), dpi=150, extra_args=["-vcodec", "libx264"])

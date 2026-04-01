@@ -19,10 +19,11 @@ from simple_worm.util import f2n, v2f
 from Animate_Worm import *
 from Animate_curvature import *
 from Carter_ODEs import *
+from kymograph import *
 
 # Parameters
 N = 6  # Number of body points - recommend ~100
-T = 10.0  # Final time - recommend several undulations
+T = 1.0  # Final time - recommend several undulations
 dt = 1.0e-3  # Time step - recommend ~1.0e-2 or lower
 n_timesteps = int(T / dt)
 
@@ -30,6 +31,7 @@ ODE_state = np.zeros(5*n)
 ODE_state[3*N] = 1.0
 ODE_state[4*N] = -1.0
 ODE_time = 0.0
+t_eval = np.arange(0, T, dt)
 
 s = np.linspace(0.0,1.0,N)
 
@@ -137,6 +139,19 @@ def example1():
 if __name__ == "__main__":
     worm_positions, curvatures = example1()
     curvatures = curvatures.T
+
+    heights = [i/N for i in range(N)]
+    times, kappa_peaks = finding_peaks(curvatures, t_eval, N)
+    wavelength, selection_time = lin_reg_wavelength(kappa_peaks, times, N)
+    print("Wavelength via kymogram: ", wavelength)
+    
+    plt.figure(figsize=(8,4))
+    plt.imshow(curvatures, aspect='auto', extent=[t_eval[0], t_eval[-1], heights[0], heights[-1]], origin='lower', cmap='bwr')
+    plt.colorbar(label='curvature')
+    plt.xlabel('Time')
+    plt.ylabel('Body length')
+    plt.show()
+
     """curvature_anim = create_curvature_animation(N, L, curvatures)
     plt.show()
     curvature_anim.save("curvature_anim.mp4", writer="ffmpeg", fps=int(1/dt), dpi=150, extra_args=["-vcodec", "libx264"])"""

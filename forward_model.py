@@ -113,11 +113,14 @@ def example2():
 
     # specific forcing function
     def alpha_forcing(t, j):
+        
         # j is point in numpy array
         # j_control is the corresponding control point
         j_control = (j * N_controls) // N
+        
         # u_control is center point of control region
         u_control = (j_control + 0.5) / N_controls
+        
         return A * np.sin(2.0 * np.pi * lam * u_control - 2 * np.pi * omega * t)
 
     t = 0.0
@@ -137,12 +140,14 @@ def example2():
 
         ret_np = ret.to_numpy()
         x_np = ret_np.x
+        print("x_np: ", x_np.shape)
+        #print("x_np: ", x_np.shape)
         curvature_np = ret_np.alpha
-
-        print(f"{x_np=}")
-        print(f"{curvature_np=}")
+        print("curvature_np: ", curvature_np.shape)
+        #print(f"{x_np=}")
+        #print(f"{curvature_np=}")
         plot_curve(x_np)
 
 
 if __name__ == "__main__":
-    example1()
+    example2()

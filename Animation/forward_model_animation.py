@@ -52,8 +52,7 @@ def example1():
     def alpha_forcing(t):
         def alpha_forcing_t(u_):
             u = u_[0]  # convert 3d coordinate to 1d
-            print(u.shape)
-            print(u)
+            
             return A * np.sin(2.0 * np.pi / lam * u - 2 * np.pi * omega * t)
 
         return alpha_forcing_t
