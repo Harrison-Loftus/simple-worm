@@ -20,10 +20,11 @@ from Animate_Worm import *
 from Animate_curvature import *
 from Carter_ODEs import *
 from kymograph import *
+from hilbert_calc import *
 
 # Parameters
-T = 1.0  # Final time - recommend several undulations
-dt = 1.0e-3  # Time step - recommend ~1.0e-2 or lower
+T = 10.0  # Final time - recommend several undulations
+dt = 1.0e-2  # Time step - recommend ~1.0e-2 or lower
 n_timesteps = int(T / dt)
 
 ODE_state = np.zeros(5*N)
@@ -129,7 +130,6 @@ def example1():
         worm_positions.append(x_np_frame.copy())
 
     curvatures = np.array(curvatures)
-    print(curvatures.shape)
         #plot_curve(x_np)
     return worm_positions, curvatures
 
@@ -150,16 +150,24 @@ if __name__ == "__main__":
 
     kappa = sol.y[0:N, :]
 
-    plt.figure()
-    plt.plot(t_eval, kappa[0,:], label='preliminary values')
-    plt.plot(t_eval, curvatures[0,:], label='simple worm values')
+    #--------wavelength comparison--------------
+    wavelength_simple_worm = Hilbert_Transform(curvatures, N)
+    wavelength_preliminary = Hilbert_Transform(kappa, N)
+
+    print("Difference in wavelength estimates: ", np.abs(wavelength_simple_worm - wavelength_preliminary))
+
+    #--------curvature comparison--------------
+    plt.figure(figsize=(10,6))
+    plt.plot(t_eval, kappa[N//2,:], label='preliminary values')
+    plt.plot(t_eval, curvatures[N//2,:], label='simple worm values')
     plt.legend()
     plt.xlabel('Time (s)')
     plt.ylabel('Curvature')
     plt.show()
 
-    plt.figure()
-    plt.plot(t_eval, np.abs(kappa[0,:] - curvatures[0,:]), label='difference in vals')
+    #--------curvature difference--------------
+    plt.figure(figsize=(10,6))
+    plt.plot(t_eval, np.abs(kappa[N//2,:] - curvatures[N//2,:]), label='difference in vals')
     plt.legend()
     plt.xlabel('Time (s)')
     plt.ylabel('Curvature difference')

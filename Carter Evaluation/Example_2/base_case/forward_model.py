@@ -12,11 +12,13 @@ from simple_worm.controls import (
 from simple_worm.worm import Worm
 from simple_worm.util import f2n, v2f#
 from Animate_Worm import *
+from Animate_curvature import *
 from hilbert_calc import *
 from kymograph import *
 from Carter_ODEs import *
-# Parameters
 
+
+# Parameters
 T = 10.0  # Final time - recommend several undulations
 dt = 1.0e-2  # Time step - recommend ~1.0e-2 or lower
 n_timesteps = int(T / dt)
@@ -136,13 +138,13 @@ if __name__ == "__main__":
     heights=np.array(heights)
     
     t_eval = np.arange(0, T, dt)
-    print("t_eval length:", len(t_eval))
+
 
     times, kappa_peaks = finding_peaks(curvatures, t_eval, N)
-    """wavelength, selection_time = lin_reg_wavelength(kappa_peaks, times, N)
+    wavelength, selection_time = lin_reg_wavelength(kappa_peaks, times, N)
 
     print("Wavelength via kymogram: ", wavelength)
-    """
+    
     plt.figure(figsize=(8,4))
     plt.imshow(curvatures, aspect='auto', extent=[0, T, heights[0], heights[-1]], origin='lower', cmap='bwr')
     plt.colorbar(label='curvature')
@@ -159,3 +161,9 @@ if __name__ == "__main__":
     anim = create_worm_animation(worm_positions, dt, plane='xz')
     plt.show()
     anim.save("worm animation.mp4", writer="ffmpeg", fps=int(1/dt), dpi=150, extra_args=["-vcodec", "libx264"])
+
+    #----------Curvature Animation----------------
+    curvature_anim = create_curvature_animation(N, L, curvatures)
+    plt.show()
+    curvature_anim.save("curvature_anim.mp4", writer="ffmpeg", fps=int(1/dt), dpi=150, extra_args=["-vcodec", "libx264"])
+    
