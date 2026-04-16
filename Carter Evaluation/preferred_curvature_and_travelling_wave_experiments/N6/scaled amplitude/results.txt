@@ -1,0 +1,1 @@
+When amplitude of the preferred curvature is scaled to 10, the curvature did not proportionally scale (~0.6 -> ~2.0). Worm's progress does diminish as seen in the worm animation.

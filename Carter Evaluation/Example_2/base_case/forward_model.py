@@ -19,7 +19,7 @@ from Carter_ODEs import *
 
 
 # Parameters
-T = 10.0  # Final time - recommend several undulations
+T = 20.0  # Final time - recommend several undulations
 dt = 1.0e-2  # Time step - recommend ~1.0e-2 or lower
 n_timesteps = int(T / dt)
 

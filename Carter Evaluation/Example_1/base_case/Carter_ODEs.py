@@ -16,10 +16,10 @@ C_N = 3.4 * mu_f # normal drag coefficient N·s/mm^2
 tau_b = mu_b / k_b # mechanical timescale seconds
 tau_m = 100.0e-3 # muscle activation timescale seconds
 tau_n = 10.0e-3 # neural activity timescale seconds
-n = 6 # number of body segments
+n = 48 # number of body segments
 l = L / n # segment length
 
-range_val = n//6
+range_val = n//6 * 4
 
 D_4 = np.zeros((n, n), float)
 for i in range(n):
@@ -93,11 +93,11 @@ def ODEs(t, state):
     V_D = state[4*n:5*n]
     
     epsilon_g = 0.0134
-    epsilon_p = 0.05
+    epsilon_p = 0.1
     c_p = 1.0
     
     M = C_N * I_n + mu_b * D_4
-    dkappadt = np.linalg.solve(M, Kmat @ (kappa + (sigma(A_V) - sigma(A_D))))
+    dkappadt = np.linalg.solve(M, Kmat @ (kappa + (sigma(A_V) - sigma(A_D))*30))
     dA_Vdt = (1/tau_m)*(-A_V + V_V - V_D)
     dA_Ddt = (1/tau_m)*(-A_D + V_D - V_V) 
 

@@ -12,6 +12,7 @@ dependencies:
   - scipy
   - ffmpeg-python
   - matplotlib
+  - pyqtgraph
   - pytest
   - git
   - pip

@@ -3,6 +3,7 @@ from dolfinx import fem
 from matplotlib import pyplot as plt
 import numpy as np
 import ufl
+import time
 
 from simple_worm.controls import (
     ControlsFenics,
@@ -12,9 +13,12 @@ from simple_worm.controls import (
 from simple_worm.worm import Worm
 from simple_worm.util import f2n, v2f#
 from Animate_Worm import *
+from Animate_curvature import *
 from hilbert_calc import *
 from kymograph import *
 from Carter_ODEs import *
+
+start_time = time.time()
 
 # Parameters
 T = 10.0  # Final time - recommend several undulations
@@ -168,3 +172,6 @@ if __name__ == "__main__":
     plt.xlabel('Time (s)')
     plt.ylabel('Curvature difference')
     plt.show()
+
+
+    print("--- %s seconds ---" % np.round((time.time() - start_time), 2))

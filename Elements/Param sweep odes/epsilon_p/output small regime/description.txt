@@ -1,0 +1,6 @@
+Here we have range = 2/3 *n
+varying epsilon p from np.arange(0.0, 0.01, 0.001). 
+eg = 0.0134. 
+amplitude = 22
+
+run-time 26mins

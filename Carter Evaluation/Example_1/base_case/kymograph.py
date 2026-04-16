@@ -7,7 +7,7 @@ def finding_peaks(kappa, t_eval, n):
     times = []
     
     for i in range(n):
-        peaks = find_peaks(kappa[i, :], height=0.1, distance=20.0/(n/6.0))
+        peaks = find_peaks(kappa[i, :], height=0.1)
         peaks_indx = peaks[0]
         time_peaks.append(peaks_indx)
         a = []
@@ -50,8 +50,8 @@ def lin_reg_wavelength(kappa_peaks, times, n):
     Beta1 = np.sum(y_less_mean_mult_x_less_mean) / np.sum(x_less_mean_sqrd)
     Beta0 = y_mean - (Beta1 * x_mean)
 
-    original_height = 0.5 / n
-    wavelength_time = times[0][1]
+    original_height = (0.5+n//2) / (n)
+    wavelength_time = times[n//2][1]
     wavelength_height = Beta0 + Beta1 * wavelength_time
 
     wavelength = np.abs(wavelength_height - original_height)

@@ -15,7 +15,7 @@ def Hilbert_Transform(kappa, n):
         phi_j_list.append(phi_j)
 
     phi_arr = np.array(phi_j_list)
-    lam_over_L = 1.0 / (n * np.mean(1.0 - phi_arr))
+    lam_over_L = (n-1) / (n * np.sum(1.0 - phi_arr))
     wavelengths_H = (lam_over_L)
 
     return wavelengths_H

@@ -20,20 +20,21 @@ from Animate_Worm import *
 from Animate_curvature import *
 from Carter_ODEs import *
 from kymograph import *
+from hilbert_calc import *
+from worm_anim_controller import *
 
 # Parameters
-N = 6  # Number of body points - recommend ~100
-T = 1.0  # Final time - recommend several undulations
-dt = 1.0e-3  # Time step - recommend ~1.0e-2 or lower
+T = 10.0  # Final time - recommend several undulations
+dt = 1.0e-2  # Time step - recommend ~1.0e-2 or lower
 n_timesteps = int(T / dt)
 
 ODE_state = np.zeros(5*n)
-ODE_state[3*N] = 1.0
-ODE_state[4*N] = -1.0
+ODE_state[3*n] = 1.0
+ODE_state[4*n] = -1.0
 ODE_time = 0.0
 t_eval = np.arange(0, T, dt)
 
-s = np.linspace(0.0,1.0,N)
+s = np.linspace(0.0,1.0,n)
 
 def plot_curve(x, filename="_tmp.png"):
     plt.figure(1)
@@ -48,14 +49,14 @@ def step_ode(dt):
     sol = solve_ivp(ODEs,
                     (ODE_time, ODE_time + dt),
                     ODE_state,
-                    method="RK23",
+                    method="RK45",
                     max_step=dt)
 
     ODE_state = sol.y[:, -1]
     ODE_time += dt
 
     # extract curvature for this timestep
-    kappa_current = ODE_state[0:N]
+    kappa_current = ODE_state[0:n]
 
 def curvature_at_u(u):
     kappa_idx = [np.argmin(np.abs(u_val - s)) for u_val in u]
@@ -68,7 +69,7 @@ def example1():
     for forcing.
     """
     # holders for 'worm', u and control
-    worm = Worm(N, dt)
+    worm = Worm(n, dt)
     worm.initialise()
 
     
@@ -129,20 +130,22 @@ def example1():
         worm_positions.append(x_np_frame.copy())
 
     curvatures = np.array(curvatures)
-    print(curvatures.shape)
         #plot_curve(x_np)
-    return worm_positions, curvatures
+    return worm_positions, curvatures.T
 
 
 
 
 if __name__ == "__main__":
     worm_positions, curvatures = example1()
-    curvatures = curvatures.T
+    print(f"{curvatures.shape=}")
 
-    heights = [i/N for i in range(N)]
-    times, kappa_peaks = finding_peaks(curvatures, t_eval, N)
-    wavelength, selection_time = lin_reg_wavelength(kappa_peaks, times, N)
+    Wavelength_H = Hilbert_Transform(curvatures, n)
+    print("Wavelength via Hilbert Transform: ", Wavelength_H)
+
+    heights = [i/n for i in range(n)]
+    times, kappa_peaks = finding_peaks(curvatures, t_eval, n)
+    wavelength, selection_time = lin_reg_wavelength(kappa_peaks, times, n)
     print("Wavelength via kymogram: ", wavelength)
     
     plt.figure(figsize=(8,4))
@@ -152,12 +155,13 @@ if __name__ == "__main__":
     plt.ylabel('Body length')
     plt.show()
 
-    """curvature_anim = create_curvature_animation(N, L, curvatures)
+    curvature_anim = create_curvature_animation(n, L, curvatures)
     plt.show()
-    curvature_anim.save("curvature_anim.mp4", writer="ffmpeg", fps=int(1/dt), dpi=150, extra_args=["-vcodec", "libx264"])"""
+    curvature_anim.save("curvature_anim.mp4", writer="ffmpeg", fps=int(1/dt), dpi=150, extra_args=["-vcodec", "libx264"])
     
-    anim = create_worm_animation(worm_positions, dt, plane='xz')
+    """anim = create_worm_animation(worm_positions, dt, plane='xz')
     plt.show()
     anim.save("worm animation.mp4", writer="ffmpeg", fps=int(1/dt), dpi=150, extra_args=["-vcodec", "libx264"])
-   
+   """
     
+    pyqtanim = view_worm_pyqtgraph(worm_positions, dt)
