@@ -150,6 +150,8 @@ if __name__ == "__main__":
     plt.savefig("kymogram.png")
     plt.close()
 
+    max_curvatur = np.max(curvatures)
+    print("max curvature: ", np.round(max_curvatur, 2))
 
     #---------Hilber Transform----------
     wavelength = Hilbert_Transform(curvatures, N, N_controls)

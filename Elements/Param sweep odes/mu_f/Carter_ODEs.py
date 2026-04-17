@@ -11,9 +11,9 @@ E = E_kPa * 1e-3 # convert to N/mm^2
 I_c = 2.0e-7 # second moment of cuticle area mm^4
 k_b = E * I_c # bending viscosity N·mm^2
 mu_b = 1.3e-7 # body viscocity N·mm²·s 
-mu_f_mPas = 1.0 # fluid viscocity mPa·s
+mu_f_mPas = np.array([1.0, 10.0, 1e2, 1e3, 2.8e4]) # fluid viscocity mPa·s
 mu_f = mu_f_mPas * 1e-9 # N·s/mm^2
-C_N = 3.4 * mu_f # normal drag coefficient N·s/mm^2
+C_N_vals = 3.4 * mu_f # normal drag coefficient N·s/mm^2
 tau_b = mu_b / k_b # mechanical timescale seconds
 tau_m = 100.0e-3 # muscle activation timescale seconds
 tau_n = 10.0e-3 # neural activity timescale seconds
@@ -25,7 +25,6 @@ N_controls = 6
 
 l = L / N # segment length
 
-epsilon_p_vals = np.arange(0.0, 0.1, 0.01)
 
 range_val = N//N_controls * 4
 
@@ -91,7 +90,7 @@ def F(V):
     return V - V**3 
 
 
-def ODEs(t, state, epsilon_p):
+def ODEs(t, state, C_N):
     
     kappa = state[0:N]
 
@@ -101,12 +100,14 @@ def ODEs(t, state, epsilon_p):
     V_D = state[4*N:5*N]
     
     epsilon_g = 0.0134
+
+    epsilon_p = 0.05
     c_p = 1.0
     
     A = 22.0 # amplitude
 
     M = C_N * I_n + mu_b * D_4
-    dkappadt = np.linalg.solve(M, A * Kmat @ (kappa + ((sigma(A_V) - sigma(A_D)) * A))) 
+    dkappadt = np.linalg.solve(M, Kmat @ (kappa + ((sigma(A_V) - sigma(A_D)) * A))) 
     dA_Vdt = (1/tau_m)*(-A_V + V_V - V_D)
     dA_Ddt = (1/tau_m)*(-A_D + V_D - V_V) 
 

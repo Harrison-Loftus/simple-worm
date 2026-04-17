@@ -22,14 +22,17 @@ T = 5.0  # Final time - recommend several undulations
 dt = 1.0e-2 # Time step - recommend ~1.0e-2 or lower
 n_timesteps = int(T / dt)
 
-ODE_state = np.zeros(5*N)
-ODE_state[3*N] = 1.0
-ODE_state[4*N] = -1.0
-ODE_time = 0.0
+
 
 s = np.linspace(0.0,1.0,N)
 
 def simulation(epsilon_p):
+
+    ODE_state = np.zeros(5*N)
+    ODE_state[3*N] = 1.0
+    ODE_state[4*N] = -1.0
+    ODE_time = 0.0
+    kappa_current = np.zeros(N)
 
     def plot_curve(x, filename="_tmp.png"):
         plt.figure(1)
@@ -39,7 +42,7 @@ def simulation(epsilon_p):
         plt.savefig(filename)
 
     def step_ode(dt):
-        global ODE_state, ODE_time, kappa_current
+        nonlocal ODE_state, ODE_time, kappa_current
 
         sol = solve_ivp(ODEs,
                         (ODE_time, ODE_time + dt),
@@ -54,10 +57,11 @@ def simulation(epsilon_p):
         kappa_current = ODE_state[0:N]
 
 
+    
     def curvature_at_u(u):
-        kappa_idx = np.argmin(np.abs(u - s)) 
-        kappa = ODE_state[kappa_idx]
-        return kappa
+        kappa_idx = np.argmin(np.abs(u - s))
+        return kappa_current[kappa_idx]
+
 
 
         """
@@ -135,19 +139,25 @@ if __name__ == "__main__":
     frequencies = np.empty(len(epsilon_p_vals), dtype=object)
     velocities = np.empty(len(epsilon_p_vals), dtype=object)
 
-    for i, epsilon_p in enumerate(epsilon_p_vals):
-        print(f'{i+1} out of {len(epsilon_p_vals)}: {np.round((i)/len(epsilon_p_vals),2)*100}% done')
-        worm_positions, curvatures = simulation(epsilon_p)
-        
+    max_curvatures = np.empty(len(epsilon_p_vals), dtype=object)
 
+    for i, epsilon_p in enumerate(epsilon_p_vals):
+        print(f'{i+1} out of {len(epsilon_p_vals)}: {np.round((i)/len(epsilon_p_vals)*100, 2)}% done')
+        worm_positions, curvatures = simulation(epsilon_p)
+        print(worm_positions.shape)
+
+        max_kappa = np.max(curvatures)
+        max_curvatures[i] = max_kappa 
         #---------Hilber Transform----------
         wavelength, frequency = Hilbert_Transform(curvatures, N, N_controls, t_eval)
         wavelengths[i] = wavelength
         frequencies[i] = frequency
+        print("Wavelength: ", wavelength)
         print("Frequency: " , frequency)
 
         #---------Worm Velocity------------
         velocity_x = average_velocity(worm_positions, t_eval)
+        print("Velocity: ", velocity_x)
         velocities[i] = velocity_x
     
     tock = time.time()
@@ -174,6 +184,14 @@ if __name__ == "__main__":
     plt.xlabel("Proprioceptive strength " + r'$\varepsilon_p$')
     plt.ylabel("velocity " + r'$\mathrm{mm/s}$')
     plt.title("Velocity against proprioceptive strength")
+    plt.show()
+
+       
+    plt.figure()
+    plt.plot(epsilon_p_vals, max_curvatures, 'ko')
+    plt.xlabel("Proprioceptive strength " + r'$\varepsilon_p$')
+    plt.ylabel("Curvature amplitude " + r'$\mathrm{mm^{-1}}$')
+    plt.title("Curvature amplitude against proprioceptive strength")
     plt.show()
     
     

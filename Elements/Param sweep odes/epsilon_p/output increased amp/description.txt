@@ -1,5 +1,0 @@
-Here we have range = 2/3 
-varying epsilon p from np.logspace(-2, 0, 2). 
-eg = 0.0134. 
-amplitude = 22
-

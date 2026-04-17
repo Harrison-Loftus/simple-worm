@@ -139,10 +139,15 @@ if __name__ == "__main__":
     frequencies = np.empty(len(epsilon_g_vals), dtype=object)
     velocities = np.empty(len(epsilon_g_vals), dtype=object)
 
+    max_curvatures = np.empty(len(epsilon_g_vals), dtype=object)
+
     for i, epsilon_g in enumerate(epsilon_g_vals):
         print(f'{i+1} out of {len(epsilon_g_vals)}: {np.round((i)/len(epsilon_g_vals),2)*100}% done')
         worm_positions, curvatures = simulation(epsilon_g)
         print(worm_positions.shape)
+
+        max_kappa = np.max(curvatures)
+        max_curvatures[i] = max_kappa
 
         #---------Hilber Transform----------
         wavelength, frequency = Hilbert_Transform(curvatures, N, N_controls, t_eval)
@@ -164,7 +169,7 @@ if __name__ == "__main__":
     plt.plot(epsilon_g_vals, wavelengths, 'ko')
     plt.xlabel("Gap-junctional strength " + r'$\varepsilon_g$')
     plt.ylabel("Normalised wavelength " + r'$\lambda / L$')
-    plt.title("Wavelength against proprioceptive strength")
+    plt.title("Wavelength against gap-junctional strength")
     plt.show()
 
 
@@ -172,14 +177,20 @@ if __name__ == "__main__":
     plt.plot(epsilon_g_vals, frequencies, 'ko')
     plt.xlabel("Gap-junctional strength " + r'$\varepsilon_g$')
     plt.ylabel(r'$\text{Frequency} \, \mathrm{Hz}$')
-    plt.title("Frequency against proprioceptive strength")
+    plt.title("Frequency against gap-junctional strength")
     plt.show()
 
     plt.figure()
     plt.plot(epsilon_g_vals, velocities,'ko')
     plt.xlabel("Gap-junctional strength " + r'$\varepsilon_g$')
     plt.ylabel("velocity " + r'$\mathrm{mm/s}$')
-    plt.title("Velocity against proprioceptive strength")
+    plt.title("Velocity against gap-junctional strength")
     plt.show()
     
+    plt.figure()
+    plt.plot(epsilon_g_vals, max_curvatures, 'ko')
+    plt.xlabel("Gap-junctional strength " + r'$\varepsilon_g$')
+    plt.ylabel("Curvature amplitude " + r'$\mathrm{mm^{-1}}$')
+    plt.title("Curvature amplitude against gap-junctional strength")
+    plt.show()
     

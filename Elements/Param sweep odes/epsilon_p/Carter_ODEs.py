@@ -25,7 +25,7 @@ N_controls = 6
 
 l = L / N # segment length
 
-epsilon_p_vals = np.arange(0.0, 0.1, 0.01)
+epsilon_p_vals = np.logspace(-4.0, 0.0, 20)
 
 range_val = N//N_controls * 4
 
@@ -106,7 +106,7 @@ def ODEs(t, state, epsilon_p):
     A = 22.0 # amplitude
 
     M = C_N * I_n + mu_b * D_4
-    dkappadt = np.linalg.solve(M, A * Kmat @ (kappa + ((sigma(A_V) - sigma(A_D)) * A))) 
+    dkappadt = np.linalg.solve(M, Kmat @ (kappa + ((sigma(A_V) - sigma(A_D)) * A))) 
     dA_Vdt = (1/tau_m)*(-A_V + V_V - V_D)
     dA_Ddt = (1/tau_m)*(-A_D + V_D - V_V) 
 

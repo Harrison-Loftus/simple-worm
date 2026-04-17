@@ -22,14 +22,17 @@ T = 5.0  # Final time - recommend several undulations
 dt = 1.0e-2 # Time step - recommend ~1.0e-2 or lower
 n_timesteps = int(T / dt)
 
-ODE_state = np.zeros(5*N)
-ODE_state[3*N] = 1.0
-ODE_state[4*N] = -1.0
-ODE_time = 0.0
+
 
 s = np.linspace(0.0,1.0,N)
 
-def simulation(W_p_val):
+def simulation(W_p):
+
+    ODE_state = np.zeros(5*N)
+    ODE_state[3*N] = 1.0
+    ODE_state[4*N] = -1.0
+    ODE_time = 0.0
+    kappa_current = np.zeros(N)
 
     def plot_curve(x, filename="_tmp.png"):
         plt.figure(1)
@@ -39,13 +42,13 @@ def simulation(W_p_val):
         plt.savefig(filename)
 
     def step_ode(dt):
-        global ODE_state, ODE_time, kappa_current
+        nonlocal ODE_state, ODE_time, kappa_current
 
         sol = solve_ivp(ODEs,
                         (ODE_time, ODE_time + dt),
                         ODE_state,
                         method="RK45",
-                        max_step=dt,args=(W_p_val,))
+                        max_step=dt,args=(W_p,))
 
         ODE_state = sol.y[:, -1]
         ODE_time += dt
@@ -54,10 +57,11 @@ def simulation(W_p_val):
         kappa_current = ODE_state[0:N]
 
 
+    
     def curvature_at_u(u):
-        kappa_idx = np.argmin(np.abs(u - s)) 
-        kappa = ODE_state[kappa_idx]
-        return kappa
+        kappa_idx = np.argmin(np.abs(u - s))
+        return kappa_current[kappa_idx]
+
 
 
         """
@@ -135,19 +139,25 @@ if __name__ == "__main__":
     frequencies = np.empty(len(range_vals), dtype=object)
     velocities = np.empty(len(range_vals), dtype=object)
 
+    max_curvatures = np.empty(len(range_vals), dtype=object)
+
     for i, W_p in enumerate(W_p_vals):
-        print(f'{i+1} out of {len(range_vals)}: {np.round((i)/len(range_vals *100),2)}% done')
+        print(f'{i+1} out of {len(range_vals)}: {np.round((i)/len(range_vals)*100, 2)}% done')
         worm_positions, curvatures = simulation(W_p)
-        
+        print(worm_positions.shape)
+
+        max_curvatures[i] = np.max(curvatures)
 
         #---------Hilber Transform----------
         wavelength, frequency = Hilbert_Transform(curvatures, N, N_controls, t_eval)
         wavelengths[i] = wavelength
         frequencies[i] = frequency
+        print("Wavelength: ", wavelength)
         print("Frequency: " , frequency)
 
         #---------Worm Velocity------------
         velocity_x = average_velocity(worm_positions, t_eval)
+        print("Velocity: ", velocity_x)
         velocities[i] = velocity_x
     
     tock = time.time()
@@ -156,24 +166,31 @@ if __name__ == "__main__":
 
     plt.figure()
     plt.plot(range_vals, wavelengths, 'ko')
-    plt.xlabel("Proprioceptive strength " + r'$\varepsilon_p$')
+    plt.xlabel("Proprioceptive range")
     plt.ylabel("Normalised wavelength " + r'$\lambda / L$')
-    plt.title("Wavelength against proprioceptive strength")
+    plt.title("Wavelength against proprioceptive range")
     plt.show()
 
 
     plt.figure()
     plt.plot(range_vals, frequencies, 'ko')
-    plt.xlabel("Proprioceptive strength " + r'$\varepsilon_p$')
+    plt.xlabel("Proprioceptive range")
     plt.ylabel(r'$\text{Frequency} \, \mathrm{Hz}$')
-    plt.title("Frequency against proprioceptive strength")
+    plt.title("Frequency against proprioceptive range")
     plt.show()
 
     plt.figure()
     plt.plot(range_vals, velocities,'ko')
-    plt.xlabel("Proprioceptive strength " + r'$\varepsilon_p$')
+    plt.xlabel("Proprioceptive range")
     plt.ylabel("Velocity " + r'$\mathrm{mm/s}$')
-    plt.title("Velocity against proprioceptive strength")
+    plt.title("Velocity against proprioceptive range")
+    plt.show()
+    
+    plt.figure()
+    plt.plot(range_vals, max_curvatures, 'ko')
+    plt.xlabel("Proprioceptive range")
+    plt.ylabel("Curvature amplitude " + r'$\mathrm{mm^{-1}}$')
+    plt.title("Curvature amplitude against proprioceptive range")
     plt.show()
     
     

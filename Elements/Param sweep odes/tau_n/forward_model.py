@@ -26,7 +26,7 @@ n_timesteps = int(T / dt)
 
 s = np.linspace(0.0,1.0,N)
 
-def simulation(C_N):
+def simulation(tau_n):
 
     ODE_state = np.zeros(5*N)
     ODE_state[3*N] = 1.0
@@ -48,7 +48,7 @@ def simulation(C_N):
                         (ODE_time, ODE_time + dt),
                         ODE_state,
                         method="RK45",
-                        max_step=dt,args=(C_N,))
+                        max_step=dt,args=(tau_n,))
 
         ODE_state = sol.y[:, -1]
         ODE_time += dt
@@ -135,19 +135,18 @@ if __name__ == "__main__":
 
     t_eval = np.arange(0, T, dt)
 
-    wavelengths = np.empty(len(C_N_vals), dtype=object)
-    frequencies = np.empty(len(C_N_vals), dtype=object)
-    velocities = np.empty(len(C_N_vals), dtype=object)
+    wavelengths = np.empty(len(tau_n_vals), dtype=object)
+    frequencies = np.empty(len(tau_n_vals), dtype=object)
+    velocities = np.empty(len(tau_n_vals), dtype=object)
 
-    max_curvatures = np.empty(len(C_N_vals), dtype=object) 
+    max_curvatures = np.empty(len(tau_n_vals), dtype=object)
 
-    for i, C_N in enumerate(C_N_vals):
-        print(f'{i+1} out of {len(C_N_vals)}: {np.round((i)/len(C_N_vals)*100, 2)}% done')
-        worm_positions, curvatures = simulation(C_N)
+    for i, tau_n in enumerate(tau_n_vals):
+        print(f'{i+1} out of {len(tau_n_vals)}: {np.round((i)/len(tau_n_vals)*100, 2)}% done')
+        worm_positions, curvatures = simulation(tau_n)
         print(worm_positions.shape)
 
-        max_kappa = np.max(curvatures)
-        max_curvatures[i] = max_kappa
+        max_curvatures[i] = np.max(curvatures)
 
         #---------Hilber Transform----------
         wavelength, frequency = Hilbert_Transform(curvatures, N, N_controls, t_eval)
@@ -166,38 +165,32 @@ if __name__ == "__main__":
     print("--- %s seconds ---" % (np.round(tock - tick, 2)))
 
     plt.figure()
-    plt.plot(mu_f, wavelengths, 'ko')
-    plt.xlabel("External fluid viscosity " + r'$\mu_f$')
+    plt.plot(tau_n_vals, wavelengths, 'ko')
+    plt.xlabel("Neural timescale " + r'$\tau_n$')
     plt.ylabel("Normalised wavelength " + r'$\lambda / L$')
-    plt.xscale('log')
-    plt.title("Wavelength against external fluid viscosity")
+    plt.title("Wavelength against neural timescale")
     plt.show()
 
 
     plt.figure()
-    plt.plot(mu_f, frequencies, 'ko')
-    plt.xlabel("External fluid viscosity " + r'$\mu_f$')
+    plt.plot(tau_n_vals, frequencies, 'ko')
+    plt.xlabel("Neural timescale " + r'$\tau_n$')
     plt.ylabel(r'$\text{Frequency} \, \mathrm{Hz}$')
-    plt.xscale('log')
-    plt.title("Frequency against external fluid viscosity")
+    plt.title("Frequency against neural timescale")
     plt.show()
 
     plt.figure()
-    plt.plot(mu_f, velocities,'ko')
-    plt.xlabel("External fluid viscosity " + r'$\mu_f$')
+    plt.plot(tau_n_vals, velocities,'ko')
+    plt.xlabel("Neural timescale " + r'$\tau_n$')
     plt.ylabel("Velocity " + r'$\mathrm{mm/s}$')
-    plt.xscale('log')
-    plt.title("Velocity against external fluid viscosity")
+    plt.title("Velocity against neural timescale")
     plt.show()
     
-
     plt.figure()
-    plt.plot(mu_f, max_curvatures, 'ko')
-    plt.xlabel("External fluid viscosity " + r'$\mu_f$')
+    plt.plot(tau_n_vals, max_curvatures, 'ko')
+    plt.xlabel("Neural timescale " + r'$\tau_n$')
     plt.ylabel("Curvature amplitude " + r'$\mathrm{mm^{-1}}$')
-    plt.xscale('log')
-    plt.title("Curvature amplitude against external fluid viscosity")
+    plt.title("Curvature amplitude against neural timescale")
     plt.show()
-    
     
     

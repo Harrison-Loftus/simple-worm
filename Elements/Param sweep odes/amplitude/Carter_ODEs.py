@@ -18,6 +18,7 @@ tau_b = mu_b / k_b # mechanical timescale seconds
 tau_m = 100.0e-3 # muscle activation timescale seconds
 tau_n = 10.0e-3 # neural activity timescale seconds
 
+amplitude_vals = np.arange(1, 23)
 
 N = 120 # number of body segments
 
@@ -26,7 +27,7 @@ N_controls = 6
 l = L / N # segment length
 
 
-range_vals = [N//N_controls * i for i in range(1,6)]
+range_val = N//N_controls * 4
 
 D_4 = np.zeros((N, N), float)
 for i in range(N):
@@ -60,7 +61,7 @@ def proprioception_matrix(n, m):
 
     return W
 
-W_p_vals = [proprioception_matrix(N, range_val) * (1.0 / (range_val)) for range_val in range_vals]
+W_p = proprioception_matrix(N, range_val) * (1.0 / (range_val))
 
 W_g = np.zeros((N, N), float)
 for i in range(N):
@@ -90,7 +91,7 @@ def F(V):
     return V - V**3 
 
 
-def ODEs(t, state, W_p):
+def ODEs(t, state, A):
     
     kappa = state[0:N]
 
@@ -104,7 +105,6 @@ def ODEs(t, state, W_p):
     epsilon_p = 0.05
     c_p = 1.0
     
-    A = 22.0 # amplitude
 
     M = C_N * I_n + mu_b * D_4
     dkappadt = np.linalg.solve(M, Kmat @ (kappa + ((sigma(A_V) - sigma(A_D)) * A))) 
