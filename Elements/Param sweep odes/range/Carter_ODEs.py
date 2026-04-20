@@ -26,7 +26,7 @@ N_controls = 6
 l = L / N # segment length
 
 
-range_vals = [N//N_controls * i for i in range(1,6)]
+range_vals = [i for i in range(1,N+1)]#[N//N_controls * i for i in range(1,6)]
 
 D_4 = np.zeros((N, N), float)
 for i in range(N):
@@ -60,7 +60,7 @@ def proprioception_matrix(n, m):
 
     return W
 
-W_p_vals = [proprioception_matrix(N, range_val) * (1.0 / (range_val)) for range_val in range_vals]
+W_p_vals = [proprioception_matrix(N, range_val) * (1.0 / (range_val)**2) for range_val in range_vals]
 
 W_g = np.zeros((N, N), float)
 for i in range(N):
