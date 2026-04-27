@@ -172,7 +172,7 @@ def example3():
     worm.initialise(MP)
 
     # wave parameters
-    A = 10.0
+    Amp = 10.0
     lam = 0.66
     omega = 1.0
 
@@ -180,7 +180,7 @@ def example3():
     def alpha_forcing(t):
         def alpha_forcing_t(u_):
             u = u_[0]  # convert 3d coordinate to 1d
-            return A * np.sin(2.0 * np.pi / lam * u - 2 * np.pi * omega * t)
+            return Amp * np.sin(2.0 * np.pi / lam * u - 2 * np.pi * omega * t)
 
         return alpha_forcing_t
 
@@ -263,7 +263,7 @@ def example4():
     zeroNm = np.zeros(N - 1)
     
     # wave parameters
-    A = 10.0
+    Amp = 10.0
     lam = 0.66
     omega = 1.0
 
@@ -277,7 +277,7 @@ def example4():
         # u_control is center point of control region
         u_control = (j_control + 0.5) / N_controls
         
-        return A * np.sin(2.0 * np.pi / lam * u_control - 2 * np.pi * omega * t)
+        return Amp * np.sin(2.0 * np.pi / lam * u_control - 2 * np.pi * omega * t)
 
 
     t = 0.0
@@ -290,8 +290,8 @@ def example4():
         control[:] = [alpha_forcing(t, j) for j in range(N)]
 
         # solve
-        C = ControlsNumpy(alpha=control, beta=zeroN, gamma=zeroNm)
-        ret = worm.update_solution(C.to_fenics(worm))
+        Cntrl = ControlsNumpy(alpha=control, beta=zeroN, gamma=zeroNm)
+        ret = worm.update_solution(Cntrl.to_fenics(worm))
 
         # output variables as 'fenics functions
         x = ret.x

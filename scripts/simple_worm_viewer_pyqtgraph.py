@@ -28,6 +28,11 @@ def view_worm_pyqtgraph(worm_positions, dt):
         worm.setData(x[:, 0], x[:, 2])
         frame = (frame + 1) % n_frames
 
+    def step_frame():
+        x = worm_positions[frame]
+        worm.setData(x[:, 0], x[:, 2])
+
+
     timer = QtCore.QTimer()
     timer.timeout.connect(update)
     timer.start(interval_ms)
@@ -39,10 +44,10 @@ def view_worm_pyqtgraph(worm_positions, dt):
             timer.stop() if paused else timer.start(interval_ms)
         elif event.key() == QtCore.Qt.Key_Right:
             frame = (frame + 1) % n_frames
-            update()
+            step_frame()
         elif event.key() == QtCore.Qt.Key_Left:
             frame = (frame - 1) % n_frames
-            update()
+            step_frame()
         elif event.key() == QtCore.Qt.Key_Plus:
             interval_ms = max(5, interval_ms - 5)
             timer.start(interval_ms)
