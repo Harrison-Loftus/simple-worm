@@ -1,6 +1,0 @@
-Parameter sweep of eps_g from 0.0 - 0.1.
-
-Range = 2/3 body.
-Simulation time = 5s necessary for frequency calc (multiple undulations needed).
-eps_p = 0.05.
-A = 22

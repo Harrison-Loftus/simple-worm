@@ -1,1 +1,0 @@
-when the number of body nodes is equal to the number of control modules, the worm has a posteriorly driven travelling wave which causes forward locomotion.
