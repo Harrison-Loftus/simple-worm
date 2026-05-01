@@ -13,9 +13,12 @@ from simple_worm.material_parameters import MaterialParameters, MaterialParamete
 from simple_worm.worm import Worm
 from simple_worm.util import f2n, v2f
 
-from Carter_ODEs_dimensionalised import *
-#from simple_worm_viewer_pyqtgraph import view_worm_pyqtgraph
-from curvature_viewer import view_curvature_pyqtgraph
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+from scripts.nondimensionalisation.dimensionalised.Carter_ODEs_dimensionalised import *
+from scripts.simple_worm_viewer_pyqtgraph import view_worm_pyqtgraph
 
 
 # Parameters
@@ -384,7 +387,7 @@ def example4():
 if __name__ == "__main__":
 
     worm_positions, curvatures = example2()
-    
-    view_curvature_pyqtgraph(curvatures, dt)
+    print(worm_positions.shape)
+    view_worm_pyqtgraph(worm_positions, dt)
     
     

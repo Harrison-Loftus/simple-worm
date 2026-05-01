@@ -6,28 +6,19 @@ from scipy.integrate import solve_ivp
 L = 1.0  # body length mm
 R = 40.0e-3  # average body radius mm
 r_c = 0.5e-3  # cuticle width mm
-E_kPa = 1000 # young's modulus kPa
+E_kPa = 100 # young's modulus kPa
 E = E_kPa * 1e-3 # convert to N/mm^2
 I_c = 2.0e-7 # second moment of cuticle area mm^4
 k_b = E * I_c # bending viscosity N·mm^2
-mu_b = 1.3e-7 # body viscocity N·mm²·s 
+mu_b = 0.1e-7 # body viscocity N·mm²·s 
 mu_f_mPas = 1.0 # fluid viscocity mPa·s
 mu_f = mu_f_mPas * 1e-9 # N·s/mm^2
-C_N = 3.4 * mu_f # normal drag coefficient N·s/mm^2
+C_N = 5.2 * mu_f # normal drag coefficient N·s/mm^2
+
 tau_b = mu_b / k_b # mechanical timescale seconds
 tau_m = 100.0e-3 # muscle activation timescale seconds
 tau_n = 10.0e-3 # neural activity timescale seconds
 
-ic = 2 * np.pi * R**3 * r_c
-print(ic)
-C_N_agar = 2.8e4 * 1e-9
-C_T = C_N * 3.3/5.2
-C_T_agar = C_N_agar * 1.0 / 40.0
-
-eta_tilde = mu_b / (L**4 * C_T_agar)
-e = (k_b * tau_m) / (L**4 * C_T_agar)
-print(eta_tilde)
-print(e)
 
 N = 120 # number of body segments
 
@@ -84,7 +75,7 @@ for i in range(N):
 
 I_n = np.eye(N)
 
-Kmat = -L**5 * D_4 # precompute once
+Kmat = -k_b * D_4 # precompute once
 
 s = l * np.arange(N)
 
@@ -109,18 +100,18 @@ def ODEs(t, state):
     V_D = state[4*N:5*N]
     
     epsilon_g = 0.0134
-    epsilon_p = 0.05
-    c_p = 1.0
+    epsilon_p = 1.0
+    c_p = 0.05
     
-    A = 100.0 # amplitude
+    A = 30.0 # amplitude
 
-    M = (C_N/mu_b * I_n + D_4) * L**5 * (tau_b / tau_m)
+    M = C_N * I_n + mu_b * D_4
     dkappadt = np.linalg.solve(M, Kmat @ (kappa + ((sigma(A_V) - sigma(A_D)) * A))) 
-    dA_Vdt = (-A_V + V_V - V_D)
-    dA_Ddt = (-A_D + V_D - V_V) 
+    dA_Vdt = (1/tau_m)*(-A_V + V_V - V_D)
+    dA_Ddt = (1/tau_m)*(-A_D + V_D - V_V) 
 
-    dV_Vdt = (tau_m/tau_n)*(F(V_V) + c_p * kappa - epsilon_p * W_p @ kappa + epsilon_g * W_g @ V_V)
-    dV_Ddt = (tau_m/tau_n)*(F(V_D) - c_p * kappa + epsilon_p * W_p @ kappa + epsilon_g * W_g @ V_D) 
+    dV_Vdt = (1/tau_n)*(F(V_V) + c_p * kappa - epsilon_p * W_p @ kappa + epsilon_g * W_g @ V_V)
+    dV_Ddt = (1/tau_n)*(F(V_D) - c_p * kappa + epsilon_p * W_p @ kappa + epsilon_g * W_g @ V_D) 
     results = np.concatenate([dkappadt, dA_Vdt, dA_Ddt, dV_Vdt, dV_Ddt])
 
     return results

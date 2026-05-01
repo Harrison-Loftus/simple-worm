@@ -13,14 +13,19 @@ from simple_worm.material_parameters import MaterialParameters, MaterialParamete
 from simple_worm.worm import Worm
 from simple_worm.util import f2n, v2f
 
-from Carter_ODEs_nondimensionalised import *
-from simple_worm_viewer_pyqtgraph import view_worm_pyqtgraph
-from hilbert_calc import Hilbert_Transform
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+from scripts.nondimensionalisation.Carter_ODEs_nondimensionalised import *
+from scripts.simple_worm_viewer_pyqtgraph import view_worm_pyqtgraph
+from scripts.hilbert_calc import Hilbert_Transform
+from scripts.velocity_calc import Average_Velocity
 
 
 # Parameters
-T = 10.0 / tau_m  # Final time - recommend several undulations
-dt = 1.0e-2 / tau_m # Time step - recommend ~1.0e-2 or lower
+T = 5.0 / t_c # Final time - recommend several undulations
+dt = 1.0e-2 / t_c # Time step - recommend ~1.0e-2 or lower
 n_timesteps = int(T / dt)
 
 ODE_state = np.zeros(5*N)
@@ -99,7 +104,7 @@ def example3():
     worm_positions = []
     while t < T:
         t += dt
-        print("Loading", np.round(t/T * 100,2),"%")
+        #print("Loading", np.round(t/T * 100,2),"%")
         step_ode(dt)
 
         # solve
@@ -238,7 +243,13 @@ if __name__ == "__main__":
 
     worm_positions, curvatures = example3()
 
+    maxcurv = np.max(curvatures)
+    velocity = Average_Velocity(worm_positions, t_eval)
     wave, freq = Hilbert_Transform(curvatures, N, N_controls, t_eval)
-    print("frequency: ", freq)
+
+    print("Wavelength: ", np.round(wave, 2))
+    print("Frequency Hz: ", np.round(freq/t_c, 2))
+    print("Max curvature: ", np.round(maxcurv, 2))
+    print("Average velocity mm/s: ", np.round(velocity/t_c, 2))
 
     view_worm_pyqtgraph(worm_positions, dt)
