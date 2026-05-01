@@ -21,10 +21,10 @@ import importlib
 
 
 # BEFORE CONDUCTING PARAMETER SWEEP CHANGE INDEX
-Parameter_Sweeps = ["ODEs.amplitude", "ODEs.epsilon_g", "ODEs.epsilon_p", "ODEs.mu_f", 
+Parameter_Sweeps = ["ODEs.amplitude", "ODEs.epsilon_g", "ODEs.epsilon_p", "scripts.sweeps.ODEs.mu_f", 
                     "ODEs.range", "ODEs.tau_m", "ODEs.tau_n"]
 
-module_name = Parameter_Sweeps[6]
+module_name = Parameter_Sweeps[3]
 module = importlib.import_module(module_name)
 
 
@@ -113,6 +113,7 @@ def simulation(Argument):
     while t < T:
         t += dt
         step_ode(dt)
+        print(np.round(t,2))
         # update control
         control[:] = [alpha_forcing(t, j) for j in range(N)]
 

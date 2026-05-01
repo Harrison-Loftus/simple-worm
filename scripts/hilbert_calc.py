@@ -30,6 +30,6 @@ def Hilbert_Transform(kappa, n, N_controls, t_eval):
         periods = np.diff(peak_times)
 
         freqs.append(1.0 / np.mean(periods))
-        frequency_H = np.mean(freqs)
+    frequency_H = np.mean(freqs)
 
     return wavelengths_H, frequency_H

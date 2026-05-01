@@ -9,20 +9,18 @@ from simple_worm.controls import (
     ControlsNumpy,
     ControlSequenceFenics,
 )
+from simple_worm.material_parameters import MaterialParameters, MaterialParametersFenics
 from simple_worm.worm import Worm
-from simple_worm.util import f2n, v2f#
-from bodyform_animation import *
-from curvature_animation import *
-from hilbert_calc import *
-from kymograph import *
-from Carter_ODEs import *
-from simple_worm_viewer_pyqtgraph import *
-from velocity_calc import *
+from simple_worm.util import f2n, v2f
+
+from Carter_ODEs_nondimensionalised import *
+from simple_worm_viewer_pyqtgraph import view_worm_pyqtgraph
+from hilbert_calc import Hilbert_Transform
 
 
 # Parameters
-T = 5.0  # Final time - recommend several undulations
-dt = 1.0e-2 # Time step - recommend ~1.0e-2 or lower
+T = 10.0 / tau_m  # Final time - recommend several undulations
+dt = 1.0e-2 / tau_m # Time step - recommend ~1.0e-2 or lower
 n_timesteps = int(T / dt)
 
 ODE_state = np.zeros(5*N)
@@ -54,16 +52,16 @@ def step_ode(dt):
     # extract curvature for this timestep
     kappa_current = ODE_state[0:N]
 
+# Note: example 3 and 4 use nondimensionalised material parameters. Here we are importing Carter_ODES which has dimensionalised parameters.
+# A new set of ODEs will need to be made for examples 3 and 4. This is just a sense check of implementation for now.
 
-
-def example1():
+def example3():
     """
     This example shows how to call the simulator with a fenics function
-    for forcing.
+    for forcing with a different set of material parameters
     """
     # holders for 'worm', u and control
     worm = Worm(N, dt)
-    worm.initialise()
 
     def curvature_at_u(u):
         kappa_idx = [np.argmin(np.abs(u_val - s)) for u_val in u]
@@ -71,6 +69,18 @@ def example1():
         return kappa
     
 
+    # set material parameters
+    MP = MaterialParameters(
+        K=5.2/3.3,  # ratio of drag coefficients
+        K_rot=1.0,  # rotational drag coefficient
+        A=e,  # bending rigidity
+        B=eta_tilde,  # bending viscosity
+        C=1.0,  # twisting rigidity
+        D=0.1,  # twisting viscosity
+    )
+    worm.initialise(MP)
+
+    
     # specific forcing function
     def alpha_forcing(t):
         def alpha_forcing_t(u_):
@@ -79,16 +89,19 @@ def example1():
             return kappas
         return alpha_forcing_t
 
+        
+
     def zero_forcing(u):
         return 0.0 * u[0]
 
-    worm_positions = []
-    curvatures = []
-
     t = 0.0
+    kappas = []
+    worm_positions = []
     while t < T:
         t += dt
+        print("Loading", np.round(t/T * 100,2),"%")
         step_ode(dt)
+
         # solve
         ret = worm.update_solution(
             ControlsFenics(
@@ -97,8 +110,6 @@ def example1():
                 gamma=v2f(zero_forcing, fs=worm.Q),
             )
         )
-
-        
 
         # output variables as 'fenics functions
         x = ret.x
@@ -109,52 +120,61 @@ def example1():
         normal = ret.e1
 
         # scalar curvature
-        #alpha = ufl.dot(vector_curvature, normal)
+        alpha = ufl.dot(vector_curvature, normal)
 
         # using the variables to compute interesting quantities
-        #curvature_form = fem.form(0.5 * alpha**2 * ufl.dx)
-        #total_curvature = fem.assemble_scalar(curvature_form)
+        curvature_form = fem.form(0.5 * alpha**2 * ufl.dx)
+        total_curvature = fem.assemble_scalar(curvature_form)
         #print(t, total_curvature)
 
         ret_np = ret.to_numpy()
         x_np = ret_np.x
         x_np_frame = x_np.T
+
         curvature_np = ret_np.alpha
         
-        
-
-        curvatures.append(curvature_np.copy())
         worm_positions.append(x_np_frame.copy())
-
-    curvatures = np.array(curvatures)
-    worm_positions = np.array(worm_positions)
+        kappas.append(curvature_np.copy())
         #plot_curve(x_np)
-    return worm_positions, curvatures.T
+    kappas = np.array(kappas)
+    worm_positions = np.array(worm_positions)
+    return worm_positions, kappas.T
 
 
-def example2():
+def example4():
     """
     This example shows how to call the simulator with a fenics function
-    for forcing.
+    for forcing with a different set of material parameters
     """
+
 
     def curvature_at_u(u):
         kappa_idx = np.argmin(np.abs(u - s)) 
         kappa = ODE_state[kappa_idx]
         return kappa
 
-
-    # holders for 'worm', u and control
     worm = Worm(N, dt)
-    worm.initialise()
 
-    # controls holder but we will only use 7 different values
+    # set material parameters
+    MP = MaterialParameters(
+        K=2.0,  # ratio of drag coefficients
+        K_rot=1.0,  # rotational drag coefficient
+        A=10.0,  # bending rigidity
+        B=0.1,  # bending viscosity
+        C=1.0,  # twisting rigidity
+        D=0.1,  # twisting viscosity
+    )
+    worm.initialise(MP)
+
+    global N_controls
+    N_controls = 6
     control = np.empty(N)
-
+    
     # holder for other control directions
     zeroN = np.zeros(N)
     zeroNm = np.zeros(N - 1)
-
+    
+    
     # specific forcing function
     def alpha_forcing(t, j):
         
@@ -168,6 +188,7 @@ def example2():
         
         return a
 
+
     t = 0.0
     kappas = []
     worm_positions = []
@@ -177,26 +198,35 @@ def example2():
         # update control
         control[:] = [alpha_forcing(t, j) for j in range(N)]
 
-
         # solve
-        C = ControlsNumpy(alpha=control, beta=zeroN, gamma=zeroNm)
-        ret = worm.update_solution(C.to_fenics(worm))
+        Cntrl = ControlsNumpy(alpha=control, beta=zeroN, gamma=zeroNm)
+        ret = worm.update_solution(Cntrl.to_fenics(worm))
 
         # output variables as 'fenics functions
-        # x = ret.x
-        # curvature = ret.alpha
+        x = ret.x
+        vector_curvature = ret.kappa_expr
+
+        # other variables computed
+        tangent = ret.e0
+        normal = ret.e1
+
+        # scalar curvature
+        alpha = ufl.dot(vector_curvature, normal)
+
+        # using the variables to compute interesting quantities
+        curvature_form = fem.form(0.5 * alpha**2 * ufl.dx)
+        total_curvature = fem.assemble_scalar(curvature_form)
+        #print(t, total_curvature)
 
         ret_np = ret.to_numpy()
         x_np = ret_np.x
         x_np_frame = x_np.T
         
         curvature_np = ret_np.alpha
-        
-        #print(f"{x_np=}")
-        #print(f"{curvature_np=}")
-        #plot_curve(x_np)
+
         worm_positions.append(x_np_frame.copy())
         kappas.append(curvature_np.copy())
+        #plot_curve(x_np)
     kappas = np.array(kappas)
     worm_positions = np.array(worm_positions)
     return worm_positions, kappas.T
@@ -204,51 +234,11 @@ def example2():
 
 if __name__ == "__main__":
 
-    worm_positions, curvatures = example1()
-    
-    #----------Kymogram--------------
-    heights = [i/N for i in range(N)]
-    heights=np.array(heights)
-    
-    t_eval = np.arange(0, T, dt)
+    t_eval = np.arange(0,T,dt)
 
+    worm_positions, curvatures = example3()
 
-    """times, kappa_peaks = finding_peaks(curvatures, t_eval, N)
-    wavelength, selection_time = lin_reg_wavelength(kappa_peaks, times, N)
-
-    print("Wavelength via kymogram: ", wavelength)"""
-    
-    plt.figure(figsize=(8,4))
-    plt.imshow(curvatures, aspect='auto', extent=[0, T, heights[0], heights[-1]], origin='lower', cmap='bwr')
-    plt.colorbar(label='curvature')
-    plt.xlabel('Time')
-    plt.ylabel('Body length')
-    plt.tight_layout()
-    plt.savefig("kymogram.png")
-    plt.close()
-
-    max_curvatur = np.max(curvatures)
-    print("max curvature: ", np.round(max_curvatur, 2))
-
-    #---------Hilber Transform----------
-    wavelength = Hilbert_Transform(curvatures, N, N_controls, t_eval)
-    print("Wavelength via Hilbert transform: ", np.round(wavelength, 2))
-
-
-    #---------Worm Velocity------------
-    velocity_x = Average_Velocity(worm_positions, t_eval)
-
-    print("Average velocity (mm/s): ", np.round(velocity_x, 2))
-
-    """#----------Animation----------------
-    anim = create_worm_animation(worm_positions, dt, plane='xz')
-    anim.save("worm animation.mp4", writer="ffmpeg", fps=int(1/dt), dpi=150, extra_args=["-vcodec", "libx264"])
-    plt.close()
-
-    #----------Curvature Animation----------------
-    curvature_anim = create_curvature_animation(N, L, curvatures)
-    curvature_anim.save("curvature_anim.mp4", writer="ffmpeg", fps=int(1/dt), dpi=150, extra_args=["-vcodec", "libx264"])
-    plt.close()"""
+    wave, freq = Hilbert_Transform(curvatures, N, N_controls, t_eval)
+    print("frequency: ", freq)
 
     view_worm_pyqtgraph(worm_positions, dt)
-    

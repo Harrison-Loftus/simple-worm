@@ -10,9 +10,11 @@ dependencies:
   - numpy >= 2.0
   - ipython
   - scipy
-  - ffmpeg-python
+  - ffmpeg
   - matplotlib
   - pyqtgraph
+  - imageio
+  - imageio-ffmpeg
   - pytest
   - git
   - pip

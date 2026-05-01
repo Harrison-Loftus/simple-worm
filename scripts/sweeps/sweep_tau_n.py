@@ -1,5 +1,9 @@
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
 from scripts.sweeps.forward_model_sweep import *
-from ODEs.tau_n import *
+from scripts.sweeps.ODEs.tau_n import *
 
 from scripts.hilbert_calc import Hilbert_Transform
 from scripts.velocity_calc import Average_Velocity
