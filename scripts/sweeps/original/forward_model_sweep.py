@@ -21,8 +21,9 @@ import importlib
 
 
 # BEFORE CONDUCTING PARAMETER SWEEP CHANGE INDEX
-Parameter_Sweeps = ["ODEs.amplitude", "ODEs.epsilon_g", "ODEs.epsilon_p", "scripts.sweeps.ODEs.mu_f", 
-                    "ODEs.range", "ODEs.tau_m", "ODEs.tau_n"]
+Parameter_Sweeps = ["scripts.sweeps.original.ODEs.amplitude", "scripts.sweeps.original.ODEs.epsilon_g", "scripts.sweeps.original.ODEs.epsilon_p", 
+                    "scripts.sweeps.original.ODEs.mu_f", "scripts.sweeps.original.ODEs.range", "scripts.sweeps.original.ODEs.tau_m", 
+                    "scripts.sweeps.original.ODEs.tau_n"]
 
 module_name = Parameter_Sweeps[3]
 module = importlib.import_module(module_name)

@@ -24,7 +24,7 @@ from scripts.velocity_calc import Average_Velocity
 
 
 # Parameters
-T = 5.0 / t_c # Final time - recommend several undulations
+T = 20.0 / t_c # Final time - recommend several undulations
 dt = 1.0e-2 / t_c # Time step - recommend ~1.0e-2 or lower
 n_timesteps = int(T / dt)
 
@@ -76,7 +76,7 @@ def example3():
 
     # set material parameters
     MP = MaterialParameters(
-        K=5.2/3.3,  # ratio of drag coefficients
+        K=K_water,  # ratio of drag coefficients
         K_rot=1.0,  # rotational drag coefficient
         A=e,  # bending rigidity
         B=eta_tilde,  # bending viscosity
@@ -162,10 +162,10 @@ def example4():
 
     # set material parameters
     MP = MaterialParameters(
-        K=2.0,  # ratio of drag coefficients
+        K=K_water,  # ratio of drag coefficients
         K_rot=1.0,  # rotational drag coefficient
-        A=10.0,  # bending rigidity
-        B=0.1,  # bending viscosity
+        A=e,  # bending rigidity
+        B=eta_tilde,  # bending viscosity
         C=1.0,  # twisting rigidity
         D=0.1,  # twisting viscosity
     )
@@ -241,7 +241,7 @@ if __name__ == "__main__":
 
     t_eval = np.arange(0,T,dt)
 
-    worm_positions, curvatures = example3()
+    worm_positions, curvatures = example4()
 
     maxcurv = np.max(curvatures)
     velocity = Average_Velocity(worm_positions, t_eval)
