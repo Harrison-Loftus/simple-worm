@@ -1,6 +1,8 @@
 import numpy as np
 from scipy.integrate import solve_ivp
 
+#---------parameter sweep preferred curvature amplitude-------------
+c_s_vals = np.arange(1, 21, 1)
 
 # constants
 L = 1.0  # body length mm
@@ -8,7 +10,7 @@ R = 40.0e-3  # average body radius mm
 r_c = 0.5e-3  # cuticle width mm
 E = 10.0 # Youngs modulus N/mm^2
 I_c = 2.0e-7 # second moment of cuticle area mm^4
-k_b = E * I_c # bending modulus N·mm^2
+k_b = E * I_c # bending viscosity N·mm^2
 mu_b = 1e-6 # body viscocity N·mm²·s 
 
 
@@ -17,22 +19,21 @@ C_T = 3.3e-9 # Tangential drag coefficient in water N·s/mm²
 C_N_agar = 128e-6 # Normal drag coefficient in agar N·s/mm²
 C_T_agar = 3.2e-6 # Tangential drag coefficient in agar N·s/mm²
 
-eta = 0.05 # viscosity of the cuticle N·s/mm^2
-print("eta: ", eta)
+eta = 0.05 # viscosity of the cuticle N/mm^2
 
 tau_b = mu_b / k_b # mechanical timescale seconds
 tau_m = 100.0e-3 # muscle activation timescale seconds
 tau_n = 10.0e-3 # neural activity timescale seconds
 print("tau",tau_b)
-t_c = 1.0
+t_c = tau_m
 
 K_water = C_N / C_T
 K_agar = C_N_agar / C_T_agar
 
-e = (E * I_c * t_c)/(L**4 * C_T_agar) / 2
+e = (E * I_c * t_c)/(L**4 * C_T_agar)
 print("e",e)
 
-eta_tilde = (eta * I_c)/(L**4 * C_T_agar) / 2
+eta_tilde = (eta * I_c)/(L**4 * C_T_agar)
 print("eta_tilde", eta_tilde)
 
 N = 120 # number of body segments
@@ -94,10 +95,9 @@ Kmat = - D_4 # precompute once
 
 s = l * np.arange(N)
 
-def sigma(A):
-    c_m = 10.0 
-    c_s = 1.0
-    a_0 = 2.0
+def sigma(A, c_s):
+    c_m = 10
+    a_0 = 2
     return 0.5 * c_m * (np.tanh((A - a_0)*c_s) + 1)
 
 
@@ -105,7 +105,7 @@ def F(V):
     return V - V**3 
 
 
-def ODEs(t, state):
+def ODEs(t, state, c_s):
     
     kappa = state[0:N]
 
@@ -113,25 +113,21 @@ def ODEs(t, state):
     A_D = state[2*N:3*N]
     V_V = state[3*N:4*N]
     V_D = state[4*N:5*N]
-
-
-    a = K_water 
-    b = np.sqrt(a / K_water)
-
-    epsilon_g = 0.0134
-    epsilon_p = 0.05 * b
-    c_p = 1.0
     
-    Amp = 50.0 # amplitude
+    epsilon_g = 0.0134
 
+    c_p = 1.0
+    epsilon_p = 0.05
+
+    Amp = 22.0
 
     M = (C_N/mu_b * I_n + D_4) * (tau_b / t_c)
-    dkappadt = np.linalg.solve(M, Kmat @ (kappa + Amp * (sigma(A_V) - sigma(A_D)))) 
-    dA_Vdt = (t_c / (5*b*tau_m))*(-A_V + V_V - V_D)
-    dA_Ddt = (t_c / (5*b*tau_m))*(-A_D + V_D - V_V) 
+    dkappadt = np.linalg.solve(M, Kmat @ (kappa + Amp * (sigma(A_V, c_s) - sigma(A_D, c_s)))) 
+    dA_Vdt = (t_c / tau_m)*(-A_V + V_V - V_D)
+    dA_Ddt = (t_c / tau_m)*(-A_D + V_D - V_V) 
 
-    dV_Vdt = (t_c/(b*tau_n))*(F(V_V) + c_p * kappa - epsilon_p * W_p @ kappa + epsilon_g * W_g @ V_V)
-    dV_Ddt = (t_c/(b*tau_n))*(F(V_D) - c_p * kappa + epsilon_p * W_p @ kappa + epsilon_g * W_g @ V_D) 
+    dV_Vdt = (t_c/tau_n)*(F(V_V) + c_p * kappa - epsilon_p * W_p @ kappa + epsilon_g * W_g @ V_V)
+    dV_Ddt = (t_c/tau_n)*(F(V_D) - c_p * kappa + epsilon_p * W_p @ kappa + epsilon_g * W_g @ V_D) 
     results = np.concatenate([dkappadt, dA_Vdt, dA_Ddt, dV_Vdt, dV_Ddt])
 
     return results

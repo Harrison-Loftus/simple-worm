@@ -113,19 +113,19 @@ def ODEs(t, state):
     A_D = state[2*N:3*N]
     V_V = state[3*N:4*N]
     V_D = state[4*N:5*N]
-
-
-    a = K_water 
+    
+    a = K_agar 
     b = np.sqrt(a / K_water)
 
     epsilon_g = 0.0134
-    epsilon_p = 0.05 * b
+    epsilon_p = 0.05 * b 
     c_p = 1.0
     
     Amp = 50.0 # amplitude
 
+    
 
-    M = (C_N/mu_b * I_n + D_4) * (tau_b / t_c)
+    M = (C_N_agar/mu_b * I_n + D_4) * (tau_b / t_c)
     dkappadt = np.linalg.solve(M, Kmat @ (kappa + Amp * (sigma(A_V) - sigma(A_D)))) 
     dA_Vdt = (t_c / (5*b*tau_m))*(-A_V + V_V - V_D)
     dA_Ddt = (t_c / (5*b*tau_m))*(-A_D + V_D - V_V) 
