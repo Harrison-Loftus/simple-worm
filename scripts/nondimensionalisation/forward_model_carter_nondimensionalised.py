@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from scripts.nondimensionalisation.Carter_ODEs_nondimensionalised import *
 from scripts.simple_worm_viewer_pyqtgraph import view_worm_pyqtgraph
-from scripts.hilbert_calc import Hilbert_Transform
+from scripts.hilbert_calc4 import Hilbert_Transform
 from scripts.velocity_calc import Average_Velocity
 
 
