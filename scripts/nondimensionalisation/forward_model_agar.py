@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from scripts.nondimensionalisation.Carter_ODEs_agar import *
 from scripts.simple_worm_viewer_pyqtgraph import view_worm_pyqtgraph
-from scripts.hilbert_calc import Hilbert_Transform
+from scripts.hilbert_calc4 import Hilbert_Transform
 from scripts.velocity_calc import Average_Velocity
 
 
@@ -243,9 +243,13 @@ if __name__ == "__main__":
 
     worm_positions, curvatures = example4()
 
+    control_indices = np.linspace(0, N-1, N_controls).astype(int)
+    kappa_reduced = curvatures[control_indices, :]
+
+
     maxcurv = np.max(curvatures)
     velocity = Average_Velocity(worm_positions, t_eval)
-    wave, freq = Hilbert_Transform(curvatures, N, N_controls, t_eval)
+    wave, freq = Hilbert_Transform(kappa_reduced, N_controls, N_controls, t_eval)
 
     print("Wavelength: ", np.round(wave, 2))
     print("Frequency Hz: ", np.round(freq/t_c, 2))
