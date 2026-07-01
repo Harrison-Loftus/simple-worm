@@ -15,9 +15,9 @@ from simple_worm.util import f2n, v2f
 
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
-from scripts.nondimensionalisation.Carter_ODEs_nondimensionalised import *
+from scripts.nondimensionalisation.remodel.Carter_ODEs_nondimensionalised import *
 from scripts.simple_worm_viewer_pyqtgraph import view_worm_pyqtgraph
 from scripts.hilbert_calc4 import Hilbert_Transform
 from scripts.velocity_calc import Average_Velocity
@@ -28,9 +28,9 @@ T = 5.0 / t_c # Final time - recommend several undulations
 dt = 1.0e-2 / t_c # Time step - recommend ~1.0e-2 or lower
 n_timesteps = int(T / dt)
 
-ODE_state = np.zeros(5*N)
-ODE_state[3*N] = 1.0
-ODE_state[4*N] = -1.0
+ODE_state = np.zeros(N+4*N_controls)
+ODE_state[N+2*N_controls] = 1.0
+ODE_state[N+3*N_controls] = -1.0
 ODE_time = 0.0
 
 s = np.linspace(0.0,1.0,N)
@@ -59,6 +59,7 @@ def step_ode(dt):
 
 # Note: example 3 and 4 use nondimensionalised material parameters. Here we are importing Carter_ODES which has dimensionalised parameters.
 # A new set of ODEs will need to be made for examples 3 and 4. This is just a sense check of implementation for now.
+
 
 def example3():
     """

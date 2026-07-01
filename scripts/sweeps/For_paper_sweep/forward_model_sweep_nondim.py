@@ -30,14 +30,14 @@ import importlib
 
 
 # BEFORE CONDUCTING PARAMETER SWEEP CHANGE INDEX
-Parameter_Sweeps = ["scripts.sweeps.nondimensional.ODEs.amplitude", "scripts.sweeps.nondimensional.ODEs.a_0", 
-                    "scripts.sweeps.nondimensional.ODEs.c_m", "scripts.sweeps.nondimensional.ODEs.c_s",
-                    "scripts.sweeps.nondimensional.ODEs.epsilon_g", 
-                    "scripts.sweeps.nondimensional.ODEs.epsilon_p",  
-                    "scripts.sweeps.nondimensional.ODEs.range", "scripts.sweeps.nondimensional.ODEs.tau_m", 
-                    "scripts.sweeps.nondimensional.ODEs.tau_n"]
+Parameter_Sweeps = ["scripts.sweeps.For_paper_sweep.ODEs.amplitude", "scripts.sweeps.For_paper_sweep.ODEs.a_0", 
+                    "scripts.sweeps.For_paper_sweep.ODEs.c_m", "scripts.sweeps.For_paper_sweep.ODEs.c_s",
+                    "scripts.sweeps.For_paper_sweep.ODEs.epsilon_g", 
+                    "scripts.sweeps.For_paper_sweep.ODEs.epsilon_p",  
+                    "scripts.sweeps.For_paper_sweep.ODEs.range", "scripts.sweeps.For_paper_sweep.ODEs.tau_m", 
+                    "scripts.sweeps.For_paper_sweep.ODEs.tau_n"]
 
-module_name = Parameter_Sweeps[4]
+module_name = Parameter_Sweeps[0]
 module = importlib.import_module(module_name)
 
 

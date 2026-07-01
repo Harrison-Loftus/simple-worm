@@ -43,6 +43,27 @@ l = L / N # segment length
 
 range_val = N//N_controls * 4
 
+def controls_to_body(A_V, A_D):
+    kappa_control = sigma(A_V) - sigma(A_D)
+    kappa_body = np.zeros(N)
+
+    for j in range(N):
+        j_control = (j * N_controls) // N
+        kappa_body[j] = kappa_control[j_control]
+
+    return kappa_body
+
+def body_to_controls(kappa):
+    kappa_coarse = np.zeros(N_controls)
+
+    for i in range(N_controls):
+        start = int(i * N / N_controls)
+        end = int((i + 1) * N / N_controls)
+        kappa_coarse[i] = np.mean(kappa[start:end])
+
+    return kappa_coarse
+
+
 D_4 = np.zeros((N, N), float)
 for i in range(N):
     for j in range(N):
@@ -77,6 +98,17 @@ def proprioception_matrix(n, m):
 
 W_p = proprioception_matrix(N, range_val) * (1.0 / (range_val))
 
+
+W_p_controls = np.zeros((N_controls, N))
+
+for i in range(N_controls):
+    start = int(max(0, (i - 4) * N / N_controls))
+    end = int(i * N / N_controls)
+
+    if end > start:
+        W_p_controls[i, start:end] = 1.0 / (end - start)
+
+
 W_g = np.zeros((N, N), float)
 for i in range(N):
     for j in range(N):
@@ -87,6 +119,15 @@ for i in range(N):
                 W_g[i, j] = -2
         elif abs(i - j) == 1:
             W_g[i, j] = 1
+
+W_g_controls = np.zeros((N_controls, N_controls))
+
+for i in range(N_controls):
+    if i > 0:
+        W_g_controls[i, i-1] = 1
+    if i < N_controls - 1:
+        W_g_controls[i, i+1] = 1
+    W_g_controls[i, i] = -2
 
 I_n = np.eye(N)
 
@@ -107,31 +148,37 @@ def F(V):
 
 def ODEs(t, state):
     
+    
     kappa = state[0:N]
 
-    A_V = state[N:2*N]
-    A_D = state[2*N:3*N]
-    V_V = state[3*N:4*N]
-    V_D = state[4*N:5*N]
+    A_V = state[N:N+N_controls]
+    A_D = state[N+N_controls:N+2*N_controls]
+    V_V = state[N+2*N_controls:N+3*N_controls]
+    V_D = state[N+3*N_controls:N+4*N_controls]
 
 
     a = K_water 
     b = np.sqrt(a / K_water)
 
-    epsilon_g = 1.0
-    epsilon_p = 0.05 * b
+    epsilon_g = 0.0134
+    epsilon_p = 0.05 #* b
     c_p = 1.0
     
     Amp = 50.0 # amplitude
 
 
     M = (C_N/mu_b * I_n + D_4) * (tau_b / t_c)
-    dkappadt = np.linalg.solve(M, Kmat @ (kappa + Amp * (sigma(A_V) - sigma(A_D)))) 
+    
+    kappa_force = controls_to_body(A_V, A_D)
+    kappa_coarse = body_to_controls(kappa)
+
+    dkappadt = np.linalg.solve(M, Kmat @ (kappa + Amp * kappa_force))
+
     dA_Vdt = (t_c / (5*b*tau_m))*(-A_V + V_V - V_D)
     dA_Ddt = (t_c / (5*b*tau_m))*(-A_D + V_D - V_V) 
 
-    dV_Vdt = (t_c/(b*tau_n))*(F(V_V) + c_p * kappa - epsilon_p * W_p @ kappa + epsilon_g * W_g @ V_V)
-    dV_Ddt = (t_c/(b*tau_n))*(F(V_D) - c_p * kappa + epsilon_p * W_p @ kappa + epsilon_g * W_g @ V_D) 
+    dV_Vdt = (t_c/(b*tau_n))*(F(V_V) + c_p * kappa_coarse - epsilon_p * W_p_controls @ kappa + epsilon_g * W_g_controls @ V_V)
+    dV_Ddt = (t_c/(b*tau_n))*(F(V_D) - c_p * kappa_coarse + epsilon_p * W_p_controls @ kappa + epsilon_g * W_g_controls @ V_D) 
     results = np.concatenate([dkappadt, dA_Vdt, dA_Ddt, dV_Vdt, dV_Ddt])
 
     return results

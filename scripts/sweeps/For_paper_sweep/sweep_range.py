@@ -2,8 +2,8 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
-from scripts.sweeps.nondimensional.forward_model_sweep_nondim import *
-from scripts.sweeps.nondimensional.ODEs.amplitude import *
+from scripts.sweeps.For_paper_sweep.forward_model_sweep_nondim import *
+from scripts.sweeps.For_paper_sweep.ODEs.range import *
 
 from scripts.hilbert_calc4 import Hilbert_Transform
 from scripts.velocity_calc import Average_Velocity
@@ -23,14 +23,14 @@ if __name__ == "__main__":
 
     t_eval = np.arange(0, T, dt)
 
-    wavelengths = np.empty(len(amplitude_vals), dtype=object)
-    frequencies = np.empty(len(amplitude_vals), dtype=object)
-    velocities = np.empty(len(amplitude_vals), dtype=object)
+    wavelengths = np.empty(len(W_p_vals), dtype=object)
+    frequencies = np.empty(len(W_p_vals), dtype=object)
+    velocities = np.empty(len(W_p_vals), dtype=object)
 
-    max_curvatures = np.empty(len(amplitude_vals), dtype=object)
+    max_curvatures = np.empty(len(W_p_vals), dtype=object)
 
-    for i, A in enumerate(amplitude_vals):
-        print(f'{i+1} out of {len(amplitude_vals)}: {np.round((i)/len(amplitude_vals)*100, 2)}% done')
+    for i, A in enumerate(W_p_vals):
+        print(f'{i+1} out of {len(W_p_vals)}: {np.round((i)/len(W_p_vals)*100, 2)}% done')
         worm_positions, curvatures = simulation(A)
         print(worm_positions.shape)
 
@@ -65,10 +65,10 @@ if __name__ == "__main__":
     print("--- %s seconds ---" % (np.round(tock - tick, 2)))
 
     plt.figure()
-    plt.plot(amplitude_vals, wavelengths, 'ko')
-    plt.xlabel("Preferred curvature scaling")
+    plt.plot(range_vals, wavelengths, 'ko')
+    plt.xlabel("Proprioceptive range")
     plt.ylabel("Normalised wavelength " + r'$\lambda / L$')
-    plt.title("Wavelength against preferred curvature scaling")
+    plt.title("Wavelength against proprioceptive range")
     plt.savefig(
         OUTPUT_DIR / f"{SCRIPT_NAME} - wavelength.png",
         dpi=300,
@@ -77,12 +77,11 @@ if __name__ == "__main__":
     plt.close()
 
 
-
     plt.figure()
-    plt.plot(amplitude_vals, frequencies, 'ko')
-    plt.xlabel("Preferred curvature scaling")
+    plt.plot(range_vals, frequencies, 'ko')
+    plt.xlabel("Proprioceptive range")
     plt.ylabel(r'$\text{Frequency} \, \mathrm{Hz}$')
-    plt.title("Frequency against preferred curvature scaling")
+    plt.title("Frequency against proprioceptive range")
     plt.savefig(
         OUTPUT_DIR / f"{SCRIPT_NAME} - frequency.png",
         dpi=300,
@@ -91,10 +90,10 @@ if __name__ == "__main__":
     plt.close()
 
     plt.figure()
-    plt.plot(amplitude_vals, velocities,'ko')
-    plt.xlabel("Preferred curvature scaling")
+    plt.plot(range_vals, velocities,'ko')
+    plt.xlabel("Proprioceptive range")
     plt.ylabel("Velocity " + r'$\mathrm{mm/s}$')
-    plt.title("Velocity against preferred curvature scaling")
+    plt.title("Velocity against proprioceptive range")
     plt.savefig(
         OUTPUT_DIR / f"{SCRIPT_NAME} - velocity.png",
         dpi=300,
@@ -103,10 +102,10 @@ if __name__ == "__main__":
     plt.close()
     
     plt.figure()
-    plt.plot(amplitude_vals, max_curvatures, 'ko')
-    plt.xlabel("Preferred curvature scaling")
+    plt.plot(range_vals, max_curvatures, 'ko')
+    plt.xlabel("Proprioceptive range")
     plt.ylabel("Curvature amplitude " + r'$\mathrm{mm^{-1}}$')
-    plt.title("Curvature amplitude against preferred cuvature scaling")
+    plt.title("Curvature amplitude against proprioceptive range")
     plt.savefig(
         OUTPUT_DIR / f"{SCRIPT_NAME} - curvature.png",
         dpi=300,

@@ -2,7 +2,7 @@ import numpy as np
 from scipy.integrate import solve_ivp
 
 #---------parameter sweep preferred curvature amplitude-------------
-epsilon_g_vals = np.logspace(-4, 0, 50)
+epsilon_g_vals = np.logspace(-4, -1, 50)
 
 # constants
 L = 1.0  # body length mm
@@ -22,6 +22,7 @@ C_T_agar = 3.2e-6 # Tangential drag coefficient in agar N·s/mm²
 eta = 0.05 # viscosity of the cuticle N/mm^2
 
 tau_b = mu_b / k_b # mechanical timescale seconds
+print(tau_b)
 tau_m = 100.0e-3 # muscle activation timescale seconds
 tau_n = 10.0e-3 # neural activity timescale seconds
 print("tau",tau_b)
@@ -115,7 +116,7 @@ def ODEs(t, state, epsilon_g):
     V_V = state[3*N:4*N]
     V_D = state[4*N:5*N]
     
-    epsilon_p = 0.05
+    epsilon_p = 0.0
     c_p = 1.0
     
     Amp = 22.0

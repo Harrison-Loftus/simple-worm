@@ -2,8 +2,8 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
-from scripts.sweeps.nondimensional.forward_model_sweep_nondim import *
-from scripts.sweeps.nondimensional.ODEs.amplitude import *
+from scripts.sweeps.For_paper_sweep.forward_model_sweep_nondim import *
+from scripts.sweeps.For_paper_sweep.ODEs.amplitude import *
 
 from scripts.hilbert_calc4 import Hilbert_Transform
 from scripts.velocity_calc import Average_Velocity

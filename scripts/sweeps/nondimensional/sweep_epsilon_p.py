@@ -5,7 +5,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from scripts.sweeps.nondimensional.forward_model_sweep_nondim import *
 from scripts.sweeps.nondimensional.ODEs.epsilon_p import *
 
-from scripts.hilbert_calc import Hilbert_Transform
+from scripts.hilbert_calc4 import Hilbert_Transform
 from scripts.velocity_calc import Average_Velocity
 
 from pathlib import Path
@@ -40,7 +40,11 @@ if __name__ == "__main__":
         print("Curvature amplitude: ", max_kappa)
 
         #---------Hilber Transform----------
-        wavelength, frequency = Hilbert_Transform(curvatures, N, N_controls, t_eval)
+
+        control_indices = np.linspace(0, N-1, N_controls).astype(int)
+        kappa_reduced = curvatures[control_indices, :]
+
+        wavelength, frequency = Hilbert_Transform(kappa_reduced, N_controls, N_controls, t_eval)
 
         frequency = frequency / t_c
 
