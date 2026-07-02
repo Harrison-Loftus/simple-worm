@@ -14,7 +14,7 @@ from simple_worm.worm import Worm
 from simple_worm.util import f2n, v2f
 
 from velocity_calc import Average_Velocity
-from hilbert_calc4 import Hilbert_Transform
+from hilbert_calc import Hilbert_Transform
 from simple_worm_viewer_pyqtgraph import view_worm_pyqtgraph
 
 from kymograph import *
@@ -291,7 +291,7 @@ def example4():
     
     # wave parameters
     Amp = 10.0
-    lam = 0.66
+    lam = 1.0
     omega = 1.0
 
     # specific forcing function
@@ -354,7 +354,7 @@ if __name__ == "__main__":
 
     t_eval = np.arange(0,T,dt)
 
-    worm_positions, curvatures = example2()
+    worm_positions, curvatures = example4()
 
     maxcurv = np.max(curvatures)
     velocity = Average_Velocity(worm_positions, t_eval)

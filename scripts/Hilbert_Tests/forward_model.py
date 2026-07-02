@@ -13,13 +13,13 @@ from simple_worm.material_parameters import MaterialParameters, MaterialParamete
 from simple_worm.worm import Worm
 from simple_worm.util import f2n, v2f
 
-from hilbert_calc3 import Hilbert_Transform
+from hilbert_calc import Hilbert_Transform
 
 # Parameters
 N = 120  # Number of body points - recommend ~100
 
 N_controls = 6
-T = 10.0  # Final time - recommend several undulations
+T = 1.0  # Final time - recommend several undulations
 dt = 1.0e-2  # Time step - recommend ~1.0e-2 or lower
 n_timesteps = int(T / dt)
 
@@ -32,76 +32,6 @@ def plot_curve(x, filename="_tmp.png"):
     plt.savefig(filename)
 
 
-# standard simple-worm examples with imposed travelling wave
-
-def example1():
-    """
-    This example shows how to call the simulator with a fenics function
-    for forcing.
-    """
-    # holders for 'worm', u and control
-    worm = Worm(N, dt)
-    worm.initialise()
-
-    # wave parameters
-    A = 10.0
-    lam = 0.66
-    omega = 1.0
-
-    # specific forcing function
-    def alpha_forcing(t):
-        def alpha_forcing_t(u_):
-            u = u_[0]  # convert 3d coordinate to 1d
-            return A * np.sin(2.0 * np.pi / lam * u - 2 * np.pi * omega * t)
-
-        return alpha_forcing_t
-
-    def zero_forcing(u):
-        return 0.0 * u[0]
-
-    t = 0.0
-    kappas = []
-    worm_positions = []
-    while t < T:
-        t += dt
-
-        # solve
-        ret = worm.update_solution(
-            ControlsFenics(
-                alpha=v2f(alpha_forcing(t), fs=worm.V),
-                beta=v2f(zero_forcing, fs=worm.V),
-                gamma=v2f(zero_forcing, fs=worm.Q),
-            )
-        )
-
-        # output variables as 'fenics functions
-        x = ret.x
-        vector_curvature = ret.kappa_expr
-
-        # other variables computed
-        tangent = ret.e0
-        normal = ret.e1
-
-        # scalar curvature
-        alpha = ufl.dot(vector_curvature, normal)
-
-        # using the variables to compute interesting quantities
-        curvature_form = fem.form(0.5 * alpha**2 * ufl.dx)
-        total_curvature = fem.assemble_scalar(curvature_form)
-        #print(t, total_curvature)
-
-        ret_np = ret.to_numpy()
-        x_np = ret_np.x
-        x_np_frame = x_np.T
-
-        curvature_np = ret_np.alpha
-        
-        worm_positions.append(x_np_frame.copy())
-        kappas.append(curvature_np.copy())
-        #plot_curve(x_np)
-    kappas = np.array(kappas)
-    worm_positions = np.array(worm_positions)
-    return worm_positions, kappas.T
 
 
 def example2(lam):
@@ -185,13 +115,11 @@ if __name__ == "__main__":
 
     for i, lam in enumerate(lam_vals):
         print("lam: ", lam)
-        worm_positions, curvatures = example2(lam)
+        worm_positions, kappa = example2(lam)
 
-        control_indices = np.linspace(0, N-1, N_controls).astype(int)
-        kappa_reduced = curvatures[control_indices, :]
 
-        maxcurv = np.max(curvatures)
-        wave, freq = Hilbert_Transform(kappa_reduced, N_controls, N_controls, t_eval)
+        maxcurv = np.max(kappa)
+        wave, freq = Hilbert_Transform(kappa, N, N_controls, t_eval)
 
         wavelengths[i] = wave
         frequencies[i] = freq
