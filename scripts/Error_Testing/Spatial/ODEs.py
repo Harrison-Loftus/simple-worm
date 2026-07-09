@@ -6,7 +6,8 @@ L = 1.0  # body length mm
 tau_m = 100.0e-3 # muscle activation timescale seconds
 tau_n = 10.0e-3 # neural activity timescale seconds
 
-N = 24
+N_vals = [6 * i for i in range(1,17)]
+
 N_controls = 6
 
 E = 10.0 # Youngs modulus N/mm^2
@@ -28,43 +29,41 @@ e = (E * I_c * t_c)/(L**4 * C_T) / 2
 eta_tilde = (eta * I_c)/(L**4 * C_T) / 2
 
 
-l = L / N # segment length
+
+def make_matrices(N):
+    range_percentage = 0.25
+
+    range_val = int(N * range_percentage)
 
 
-range_percentage = 0.25
 
-range_val = int(N * range_percentage)
-print(range_val)
+    def proprioception_matrix(n, m):
+        W = np.zeros((n, n))
+        m = abs(m)
 
+        for i in range(n):
+            j_min = max(0, i - m)
+            for j in range(j_min, i):
+                W[j, i] = 1
 
-def proprioception_matrix(n, m):
-    W = np.zeros((n, n))
-    m = abs(m)
+        return W
 
-    for i in range(n):
-        j_min = max(0, i - m)
-        for j in range(j_min, i):
-            W[j, i] = 1
+    W_p = proprioception_matrix(N, range_val)
 
-    return W
+    W_p = W_p / np.maximum(W_p.sum(axis=1, keepdims=True), 1)
 
-W_p = proprioception_matrix(N, range_val)
-
-row_sums = W_p.sum(axis=1)
-row_sums[row_sums == 0] = 1
-W_p = W_p / row_sums[:, None]
-
-
-W_g = np.zeros((N, N), float)
-for i in range(N):
-    for j in range(N):
-        if i == j:
-            if i == 0 or i == N-1:
-                W_g[i, j] = -1
-            else:
-                W_g[i, j] = -2
-        elif abs(i - j) == 1:
-            W_g[i, j] = 1
+    W_g = np.zeros((N, N), float)
+    for i in range(N):
+        for j in range(N):
+            if i == j:
+                if i == 0 or i == N-1:
+                    W_g[i, j] = -1
+                else:
+                    W_g[i, j] = -2
+            elif abs(i - j) == 1:
+                W_g[i, j] = 1
+    
+    return W_p, W_g
 
 
 def sigma(A):
@@ -78,8 +77,10 @@ def F(V):
     return V - V**3 
 
 
-def ODEs(t, state, kappa):
+def ODEs(t, state, kappa, N):
     
+    W_p, W_g = make_matrices(N)
+
     A_V = state[0:N]
     A_D = state[N:2*N]
     V_V = state[2*N:3*N]

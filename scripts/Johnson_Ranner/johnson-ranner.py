@@ -14,11 +14,15 @@ from simple_worm.material_parameters import MaterialParameters, MaterialParamete
 from simple_worm.worm import Worm
 from simple_worm.util import f2n, v2f
 
-from hilbert_calc import Hilbert_Transform
-from simple_worm_viewer_pyqtgraph import view_worm_pyqtgraph
-from curvature_viewer import view_curvature_pyqtgraph
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from ODEs import *
+from scripts.hilbert_calc import Hilbert_Transform
+from scripts.simple_worm_viewer_pyqtgraph import view_worm_pyqtgraph
+from scripts.curvature_viewer import view_curvature_pyqtgraph
+
+from scripts.Johnson_Ranner.ODEs import *
 
 
 def example4():
@@ -29,7 +33,7 @@ def example4():
     # holders for 'worm', u and control
     # Parameters
 
-    T = 10.0  # Final time - recommend several undulations
+    T = 5.0  # Final time - recommend several undulations
     global dt
     dt = 1.0e-2  # Time step - recommend ~1.0e-2 or lower
     global t_eval
@@ -55,10 +59,10 @@ def example4():
 
     # set material parameters
     MP = MaterialParameters(
-        K=10.0,  # ratio of drag coefficients
+        K=C_N / C_T,  # ratio of drag coefficients
         K_rot=1.0,  # rotational drag coefficient
-        A=1.0,  # bending rigidity
-        B=0.1,  # bending viscosity
+        A=e,  # bending rigidity
+        B=eta_tilde,  # bending viscosity
         C=1.0,  # twisting rigidity
         D=0.1,  # twisting viscosity
     )
@@ -148,6 +152,10 @@ if __name__ == "__main__":
 
 
     worm_positions, curvatures = example4()
+
+    print(worm_positions.shape)
+    f_worm = worm_positions[-1]
+    print(f_worm.shape)
 
     maxcurv = np.max(curvatures)
     wave, freq = Hilbert_Transform(curvatures, N, N_controls, t_eval)
