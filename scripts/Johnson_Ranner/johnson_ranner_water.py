@@ -45,9 +45,9 @@ def example4():
     n_timesteps = int(T / dt)
     s = np.linspace(0.0,1.0,N)
 
-    ODE_state = np.zeros(4*N_controls)
-    ODE_state[2*N_controls:3*N_controls] = 0.5
-    ODE_state[3*N_controls:4*N_controls] = -0.5
+    ODE_state = np.zeros(2*N_muscular + 2*N_controls)
+    ODE_state[2*N_muscular:2*N_muscular + N_controls] = 1.0
+    ODE_state[2*N_muscular + N_controls:2*N_muscular + 2*N_controls] = -1.0
 
     kappa_init = np.zeros(N)
 
@@ -62,7 +62,7 @@ def example4():
 
     # set material parameters
     MP = MaterialParameters(
-        K=K_agar,  # ratio of drag coefficients
+        K=K_water,  # ratio of drag coefficients
         K_rot=1.0,  # rotational drag coefficient
         A=e,  # bending rigidity
         B=eta_tilde,  # bending viscosity
@@ -103,13 +103,14 @@ def example4():
 
         ODE_state = sols.y[:, -1]
 
-        A_V = ODE_state[0:N_controls]
-        A_D = ODE_state[N_controls:2*N_controls]
+        A_V = ODE_state[0:N_muscular]
+        A_D = ODE_state[N_muscular:2*N_muscular]
 
 
         t += dt
+        print(np.round(t, 2))
 
-        repeat_factor = N // N_controls
+        repeat_factor = N // N_muscular
         betas = sigma(A_V) - sigma(A_D)        
         betas = np.repeat(betas, repeat_factor)
 

@@ -19,9 +19,11 @@ from simple_worm_viewer_pyqtgraph import view_worm_pyqtgraph
 
 from kymograph import *
 
+import time
+
 # Parameters
 
-T = 10.0  # Final time - recommend several undulations
+T = 1.0  # Final time - recommend several undulations
 dt = 1.0e-2  # Time step - recommend ~1.0e-2 or lower
 n_timesteps = int(T / dt)
 
@@ -312,7 +314,7 @@ def example4():
     worm_positions = []
     while t < T:
         t += dt
-
+        print(np.round(t, 2))
         # update control
         control[:] = [alpha_forcing(t, j) for j in range(N)]
 
@@ -352,6 +354,8 @@ def example4():
 
 if __name__ == "__main__":
 
+    tick = time.time()
+
     t_eval = np.arange(0,T,dt)
 
     worm_positions, curvatures = example4()
@@ -369,5 +373,9 @@ if __name__ == "__main__":
     wavelength_k, selection_time = lin_reg_wavelength(kappa_peaks, times, N)
 
     print("kymogram wavelength ", wavelength_k)
+
+    tock = time.time()
+
+    print("time: ", np.round(tock - tick, 2))
 
     view_worm_pyqtgraph(worm_positions, dt)
