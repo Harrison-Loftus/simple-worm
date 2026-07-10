@@ -16,28 +16,33 @@ from simple_worm.util import f2n, v2f
 
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
 
 from scripts.hilbert_calc import Hilbert_Transform
 from scripts.simple_worm_viewer_pyqtgraph import view_worm_pyqtgraph
 from scripts.curvature_viewer import view_curvature_pyqtgraph
 
-from scripts.Johnson_Ranner.ODEs import *
+from scripts.Error_Testing.Nondimensionalised.Temporal.ODEs import *
 
 
-def example4():
+from pathlib import Path
+
+# Outputs directory
+OUTPUT_DIR = Path("outputs")
+OUTPUT_DIR.mkdir(exist_ok=True)
+
+SCRIPT_NAME = Path(__file__).stem
+
+T = 5.0  # Final time - recommend several undulations
+
+def simulation(dt):
     """
     This example shows how to call the simulator with a fenics function
     for forcing with a different set of material parameters
     """
     # holders for 'worm', u and control
     # Parameters
-
-    T = 5.0  # Final time - recommend several undulations
-    global dt
-    dt = 1.0e-2  # Time step - recommend ~1.0e-2 or lower
-    global t_eval
-    t_eval = np.arange(0,T,dt)
+    
 
     n_timesteps = int(T / dt)
     s = np.linspace(0.0,1.0,N)
@@ -150,19 +155,117 @@ def example4():
 
 if __name__ == "__main__":
 
+    dt_vals = np.logspace(-4,-1,10)
+    dt_vals = np.array(list(reversed(dt_vals)))
 
-    worm_positions, curvatures = example4()
+    final_worm_positions = np.empty(len(dt_vals), dtype=object)
+    lambdas = np.empty(len(dt_vals), dtype=object)
+    freqs = np.empty(len(dt_vals), dtype=object)
+    maxcurvs = np.empty(len(dt_vals), dtype=object)
+    
 
-    print(worm_positions.shape)
-    f_worm = worm_positions[-1]
-    print(f_worm.shape)
+    for i, dt in enumerate(dt_vals):
+        dt = float(dt)
+        print("dt: ", dt)
+        t_eval = np.arange(0,T,dt)
 
-    maxcurv = np.max(curvatures)
-    wave, freq = Hilbert_Transform(curvatures, N, N_controls, t_eval)
+        worm_positions, curvatures = simulation(dt)
 
-    print("Wavelength: ", np.round(wave, 2))
-    print("Frequency Hz: ", np.round(freq, 2))
-    print("Max curvature: ", np.round(maxcurv, 2))
-   
-    view_worm_pyqtgraph(worm_positions, dt)
-    #view_curvature_pyqtgraph(curvatures, dt)
+        f_worm_position = worm_positions[-1]
+        final_worm_positions[i] = f_worm_position
+
+        maxcurv = np.max(curvatures)
+        maxcurvs[i] = maxcurv
+        wave, freq = Hilbert_Transform(curvatures, N, N_controls, t_eval)
+
+        lambdas[i] = wave
+        freqs[i] = freq
+
+        print("Wavelength: ", np.round(wave, 2))
+        print("Frequency Hz: ", np.round(freq, 2))
+        print("Max curvature: ", np.round(maxcurv, 2))
+    
+    
+    errors = []
+    freqs_diff = []
+    lambdas_diff = []
+    maxcurvs_diff = []
+
+    for i in range(len(final_worm_positions) - 1):
+        worm_coarse = final_worm_positions[i]
+        worm_fine = final_worm_positions[i+1]
+
+        point_distances = np.linalg.norm(worm_coarse - worm_fine, axis=1)
+
+        errors.append(np.mean(point_distances))
+        freqs_diff.append(np.abs(freqs[i] - freqs[i+1]))
+        lambdas_diff.append(np.abs(lambdas[i] - lambdas[i+1]))
+        maxcurvs_diff.append(np.abs(maxcurvs[i] - maxcurvs[i+1]))
+
+
+
+    errors = np.array(errors)
+
+    print(errors)
+
+    #--------------worm position errors---------------
+    plt.figure()
+    plt.plot(dt_vals[:-1], errors, 'ko')
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.xlabel('dt')
+    plt.ylabel('Difference in average distance')
+    
+    plt.savefig(
+        OUTPUT_DIR / f"{SCRIPT_NAME} - dt errors.png",
+        dpi=300,
+        bbox_inches="tight"
+    )
+    plt.close()
+
+    #-------------wavelength errors-----------------
+    plt.figure()
+    plt.plot(dt_vals[:-1], lambdas_diff, 'ko')
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.xlabel('dt')
+    plt.ylabel('Difference in wavelength')
+    
+    plt.savefig(
+        OUTPUT_DIR / f"{SCRIPT_NAME} - wavelength differences.png",
+        dpi=300,
+        bbox_inches="tight"
+    )
+    plt.close()
+
+
+    #--------------frequency diffs-----------
+    plt.figure()
+    plt.plot(dt_vals[:-1], freqs_diff, 'ko')
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.xlabel('dt')
+    plt.ylabel('Difference in frequency')
+    
+    plt.savefig(
+        OUTPUT_DIR / f"{SCRIPT_NAME} - frequency differences.png",
+        dpi=300,
+        bbox_inches="tight"
+    )
+    plt.close()
+
+    #--------------curvature amplitude diffs------------
+    plt.figure()
+    plt.plot(dt_vals[:-1], maxcurvs_diff, 'ko')
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.xlabel('dt')
+    plt.ylabel('Difference in curvature amplitude')
+    
+    plt.savefig(
+        OUTPUT_DIR / f"{SCRIPT_NAME} - curvature amplitude differences.png",
+        dpi=300,
+        bbox_inches="tight"
+    )
+    plt.close()
+
