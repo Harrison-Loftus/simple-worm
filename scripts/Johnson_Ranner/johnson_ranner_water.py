@@ -24,7 +24,7 @@ from scripts.curvature_viewer import view_curvature_pyqtgraph
 
 from scripts.Johnson_Ranner.ODEs import *
 
-T = 30.0  # Final time - recommend several undulations
+T = 10.0  # Final time - recommend several undulations
 
 dt = 1.0e-2  # Time step - recommend ~1.0e-2 or lower
 
@@ -46,8 +46,8 @@ def example4():
     s = np.linspace(0.0,1.0,N)
 
     ODE_state = np.zeros(2*N_muscular + 2*N_controls)
-    ODE_state[2*N_muscular:2*N_muscular + N_controls] = 1.0
-    ODE_state[2*N_muscular + N_controls:2*N_muscular + 2*N_controls] = -1.0
+    ODE_state[2*N_muscular: 2*N_muscular + N_controls] = 0.5
+    ODE_state[2*N_muscular + N_controls: 2*N_muscular + 2*N_controls] = -0.5
 
     kappa_init = np.zeros(N)
 
@@ -108,11 +108,11 @@ def example4():
 
 
         t += dt
-        print(np.round(t, 2))
 
         repeat_factor = N // N_muscular
-        betas = sigma(A_V) - sigma(A_D)        
+        betas = A_V - A_D       
         betas = np.repeat(betas, repeat_factor)
+        print("betas: ", np.round(betas[N//2], 2), "A_V: ", np.round(A_V[N_muscular // 2], 2), "A_D", np.round(A_D[N_muscular // 2],2))
 
         # update control
         control[:] = [alpha_forcing(t, j) for j in range(N)]

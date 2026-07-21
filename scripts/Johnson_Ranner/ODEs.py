@@ -34,7 +34,7 @@ print(eta_tilde)
 l = L / N # segment length
 
 
-range_percentage = 0.4
+range_percentage = 0.75
 
 range_val = int(N * range_percentage)
 
@@ -70,20 +70,21 @@ for i in range(N):
 def sigma(A):
     c_m = 10
     c_s = 1
-    a_0 = 2
+    a_0 = 0
     return 0.5 * c_m * (np.tanh((A - a_0)*c_s) + 1)
 
 
 def F(V):
-    return V - V**3 
+    return V - V**3
 
 
 def ODEs(t, state, kappa):
     
-    A_V = state[0:N_muscular]
-    A_D = state[N_muscular:2*N_muscular]
-    V_V = state[2*N_muscular:2*N_muscular + N_controls]
-    V_D = state[2*N_muscular + N_controls:2*N_muscular + 2*N_controls]
+    
+    A_V = state[0: N_muscular]
+    A_D = state[N_muscular: 2*N_muscular]
+    V_V = state[2*N_muscular: 2*N_muscular + N_controls]
+    V_D = state[2*N_muscular + N_controls: 2*N_muscular + 2*N_controls]
     
     epsilon_g = 0.0
     epsilon_p = 1.0 
@@ -94,12 +95,17 @@ def ODEs(t, state, kappa):
     P_ctrl = np.array([np.mean(region) for region in P_regions])
     
     repeat_fact = N_muscular // N_controls
+    repeat_fact_neural_to_body = N // N_controls
     
     V_V_ctrl = np.repeat(V_V, repeat_fact)
     V_D_ctrl = np.repeat(V_D, repeat_fact)
+    V_V_body = np.repeat(V_V, repeat_fact_neural_to_body)
+    V_D_body = np.repeat(V_D, repeat_fact_neural_to_body)
 
-    dA_Vdt = (1/tau_m)*(-A_V + V_V_ctrl - V_D_ctrl)
-    dA_Ddt = (1/tau_m)*(-A_D + V_D_ctrl - V_V_ctrl) 
+    
+
+    dA_Vdt = (1/tau_m) * (-A_V + sigma(V_V_ctrl - V_D_ctrl))
+    dA_Ddt = (1/tau_m) * (-A_D + sigma(V_D_ctrl - V_V_ctrl))
 
     dV_Vdt = (1/tau_n)*(F(V_V) - epsilon_p * P_ctrl) #+ epsilon_g * W_g @ V_V)
     dV_Ddt = (1/tau_n)*(F(V_D) + epsilon_p * P_ctrl) #+ epsilon_g * W_g @ V_D) 
