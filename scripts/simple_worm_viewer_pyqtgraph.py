@@ -11,11 +11,20 @@ def view_worm_pyqtgraph(worm_positions, dt):
 
     win = pg.GraphicsLayoutWidget(show=True)
     win.setWindowTitle("Simple Worm Viewer (pyqtgraph)")
+    win.setBackground('w')
     plot = win.addPlot()
     plot.setAspectLocked(True)
-    plot.showGrid(x=True, y=True)
+    plot.showGrid(x=False, y=False)
+    
+    plot.setLabel('left', text='<font size="12">y</font>', color='k')
+    plot.setLabel('bottom', text='<font size="12">x</font>', color='k')
 
-    worm = plot.plot([], [], pen=pg.mkPen('w', width=2))
+    plot.getAxis('bottom').enableAutoSIPrefix(False)
+    plot.getAxis('left').enableAutoSIPrefix(False)
+
+    plot.setTitle('Simulated Forward Locomotion in Water', color='k', size="16pt")
+
+    worm = plot.plot([], [], pen=pg.mkPen('k', width=5))
 
     n_frames = len(worm_positions)
     frame = 0

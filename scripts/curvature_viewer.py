@@ -23,7 +23,7 @@ def view_curvature_pyqtgraph(curvature, dt):
 
     win = pg.GraphicsLayoutWidget(show=True)
     plot = win.addPlot()
-    plot.showGrid(x=True, y=True)
+    plot.showGrid(x=False, y=False)
 
     curve = plot.plot([], [], pen=pg.mkPen('w', width=2))
 

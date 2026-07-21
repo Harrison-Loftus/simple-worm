@@ -22,7 +22,7 @@ from scripts.hilbert_calc import Hilbert_Transform
 from scripts.simple_worm_viewer_pyqtgraph import view_worm_pyqtgraph
 from scripts.curvature_viewer import view_curvature_pyqtgraph
 
-from scripts.Error_Testing.Nondimensionalised.Spatial.ODEs import *
+from scripts.Error_Testing.Numerical.Spatial.ODEs import *
 
 
 from pathlib import Path
@@ -48,9 +48,9 @@ def simulation(N):
     n_timesteps = int(T / dt)
     s = np.linspace(0.0,1.0,N)
 
-    ODE_state = np.zeros(4*N)
-    ODE_state[2*N:3*N] = 0.5
-    ODE_state[3*N:4*N] = -0.5
+    ODE_state = np.zeros(2*N_muscular + 2*N_controls)
+    ODE_state[2*N_muscular:2*N_muscular + N_controls] = 1.0
+    ODE_state[2*N_muscular + N_controls:2*N_muscular + 2*N_controls] = -1.0
 
     kappa_init = np.zeros(N)
 
@@ -65,7 +65,7 @@ def simulation(N):
 
     # set material parameters
     MP = MaterialParameters(
-        K=C_N / C_T,  # ratio of drag coefficients
+        K=K_water,  # ratio of drag coefficients
         K_rot=1.0,  # rotational drag coefficient
         A=e,  # bending rigidity
         B=eta_tilde,  # bending viscosity
@@ -106,14 +106,16 @@ def simulation(N):
 
         ODE_state = sols.y[:, -1]
 
-        A_V = ODE_state[0:N]
-        A_D = ODE_state[N:2*N]
+        A_V = ODE_state[0:N_muscular]
+        A_D = ODE_state[N_muscular:2*N_muscular]
 
 
         t += dt
 
+        repeat_factor = N // N_muscular
         betas = sigma(A_V) - sigma(A_D)        
-        
+        betas = np.repeat(betas, repeat_factor)
+
         # update control
         control[:] = [alpha_forcing(t, j) for j in range(N)]
 
@@ -228,7 +230,8 @@ if __name__ == "__main__":
     plt.yscale('log')
     plt.xlabel('N')
     plt.ylabel('Difference in wavelength')
-    
+    plt.xscale('log', base=2) 
+
     plt.savefig(
         OUTPUT_DIR / f"{SCRIPT_NAME} - wavelength differences.png",
         dpi=300,
@@ -243,7 +246,8 @@ if __name__ == "__main__":
     plt.yscale('log')
     plt.xlabel('N')
     plt.ylabel('Difference in frequency')
-    
+    plt.xscale('log', base=2) 
+
     plt.savefig(
         OUTPUT_DIR / f"{SCRIPT_NAME} - frequency differences.png",
         dpi=300,
@@ -257,7 +261,8 @@ if __name__ == "__main__":
     plt.yscale('log')
     plt.xlabel('N')
     plt.ylabel('Difference in curvature amplitude')
-    
+    plt.xscale('log', base=2) 
+
     plt.savefig(
         OUTPUT_DIR / f"{SCRIPT_NAME} - curvature amplitude differences.png",
         dpi=300,

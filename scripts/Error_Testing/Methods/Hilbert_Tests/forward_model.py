@@ -13,7 +13,7 @@ from simple_worm.material_parameters import MaterialParameters, MaterialParamete
 from simple_worm.worm import Worm
 from simple_worm.util import f2n, v2f
 
-from hilbert_calc import Hilbert_Transform
+from scripts.Error_Testing.Methods.Hilbert_Tests.hilbert_calc import Hilbert_Transform
 
 # Parameters
 N = 120  # Number of body points - recommend ~100

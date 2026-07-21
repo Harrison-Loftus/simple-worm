@@ -24,7 +24,7 @@ from scripts.curvature_viewer import view_curvature_pyqtgraph
 
 from scripts.Johnson_Ranner.ODEs import *
 
-T = 10.0  # Final time - recommend several undulations
+T = 30.0  # Final time - recommend several undulations
 
 dt = 1.0e-2  # Time step - recommend ~1.0e-2 or lower
 

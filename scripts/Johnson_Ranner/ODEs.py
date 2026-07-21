@@ -34,7 +34,7 @@ print(eta_tilde)
 l = L / N # segment length
 
 
-range_percentage = 0.5
+range_percentage = 0.4
 
 range_val = int(N * range_percentage)
 
