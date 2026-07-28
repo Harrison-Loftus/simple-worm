@@ -23,9 +23,28 @@ import time
 
 # Parameters
 
-T = 1.0  # Final time - recommend several undulations
+T = 10.0  # Final time - recommend several undulations
 dt = 1.0e-2  # Time step - recommend ~1.0e-2 or lower
 n_timesteps = int(T / dt)
+
+L = 1.0
+E = 0.1 # Youngs modulus N/mm^2
+I_c = 2.0e-7 # second moment of cuticle area mm^4
+r_c = 0.5e-3  # cuticle width mm
+eta = 0.05 # viscosity of the cuticle N·s/mm^2
+
+C_N = 5.2e-9 # Normal drag coefficient in water N·s/mm²
+C_T = 3.3e-9 # Tangential drag coefficient in water N·s/mm²
+
+C_N_agar = 128e-6 # Normal drag coefficient in agar N·s/mm²
+C_T_agar = 3.2e-6 # Tangential drag coefficient in agar N·s/mm²
+
+K_water = C_N / C_T
+K_agar = C_N_agar / C_T_agar
+
+t_c = 1.0
+e = (E * I_c * t_c)/(L**4 * C_T_agar) / 2
+eta_tilde = (eta * I_c)/(L**4 * C_T_agar) / 2
 
 
 def plot_curve(x, filename="_tmp.png"):
@@ -135,7 +154,7 @@ def example2():
 
     # wave parameters
     A = 10.0
-    lam = 0.66
+    lam = 1.0
     omega = 1.0
 
     # specific forcing function
@@ -268,7 +287,7 @@ def example4():
     """
     # holders for 'worm', u and control
     global N
-    N = 120
+    N = 96
     # holders for 'worm', u and control
     worm = Worm(N, dt)
 

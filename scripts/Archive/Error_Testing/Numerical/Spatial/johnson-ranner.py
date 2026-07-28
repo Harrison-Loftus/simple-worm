@@ -16,7 +16,14 @@ from simple_worm.util import f2n, v2f
 
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
+
+from scripts.hilbert_calc import Hilbert_Transform
+from scripts.simple_worm_viewer_pyqtgraph import view_worm_pyqtgraph
+from scripts.curvature_viewer import view_curvature_pyqtgraph
+
+from scripts.Archive.Error_Testing.Numerical.Spatial.ODEs import *
+
 
 from pathlib import Path
 
@@ -26,30 +33,18 @@ OUTPUT_DIR.mkdir(exist_ok=True)
 
 SCRIPT_NAME = Path(__file__).stem
 
-from scripts.hilbert_calc import Hilbert_Transform
-from scripts.simple_worm_viewer_pyqtgraph import view_worm_pyqtgraph
-from scripts.curvature_viewer import view_curvature_pyqtgraph
-
-from scripts.viscosity_sweep.ODEs import *
-
 T = 10.0  # Final time - recommend several undulations
+dt = 1.0e-2
 
-dt = 1.0e-2  # Time step - recommend ~1.0e-2 or lower
-
-t_eval = np.arange(0,T,dt)
-
-
-def simulation(K_value):
+def simulation(N):
     """
     This example shows how to call the simulator with a fenics function
     for forcing with a different set of material parameters
     """
     # holders for 'worm', u and control
     # Parameters
-
-
     
-    
+
     n_timesteps = int(T / dt)
     s = np.linspace(0.0,1.0,N)
 
@@ -70,7 +65,7 @@ def simulation(K_value):
 
     # set material parameters
     MP = MaterialParameters(
-        K=K_value,  # ratio of drag coefficients
+        K=K_water,  # ratio of drag coefficients
         K_rot=1.0,  # rotational drag coefficient
         A=e,  # bending rigidity
         B=eta_tilde,  # bending viscosity
@@ -107,7 +102,7 @@ def simulation(K_value):
     while t < T:
 
         sols = solve_ivp(ODEs, (t, t+dt), ODE_state, method="RK45",
-                        max_step=dt,args=(kappa_init,))
+                        max_step=dt, args=(kappa_init, N,))
 
         ODE_state = sols.y[:, -1]
 
@@ -116,7 +111,6 @@ def simulation(K_value):
 
 
         t += dt
-    
 
         repeat_factor = N // N_muscular
         betas = sigma(A_V) - sigma(A_D)        
@@ -162,59 +156,117 @@ def simulation(K_value):
     return worm_positions, kappas.T
 
 
-
 if __name__ == "__main__":
-    K_vals = np.linspace(K_water, 2*K_agar + (2*K_agar - K_water)/50, 50)
 
-    wavelengths = np.empty(len(K_vals), dtype=object)
-    frequencies = np.empty(len(K_vals), dtype=object)
-    maxcurvs = np.empty(len(K_vals), dtype=object)
     
-    for i, K in enumerate(K_vals):
-        print("K ", K)
-        worm_positions, curvatures = simulation(K)
+    #final_worm_positions = np.empty(len(N_vals), dtype=object)
+    lambdas = np.empty(len(N_vals), dtype=object)
+    freqs = np.empty(len(N_vals), dtype=object)
+    maxcurvs = np.empty(len(N_vals), dtype=object)
+    
+
+    for i, N in enumerate(N_vals):
+        
+        print("N: ", N)
+        t_eval = np.arange(0,T,dt)
+
+        worm_positions, curvatures = simulation(N)
+
+        #f_worm_position = worm_positions[-1]
+        #final_worm_positions[i] = f_worm_position
 
         maxcurv = np.max(curvatures)
         maxcurvs[i] = maxcurv
-        
         wave, freq = Hilbert_Transform(curvatures, N, N_controls, t_eval)
-        
-        wavelengths[i] = wave
-        frequencies[i] = freq
+
+        lambdas[i] = wave
+        freqs[i] = freq
 
         print("Wavelength: ", np.round(wave, 2))
         print("Frequency Hz: ", np.round(freq, 2))
         print("Max curvature: ", np.round(maxcurv, 2))
     
-    plt.figure()
-    plt.plot(K_vals[1:-1], wavelengths[1:-1], 'ko')
-    plt.plot(K_vals[0], wavelengths[0], 'r*', markersize=12)
-    plt.plot(K_vals[-1], wavelengths[-1], 'r*', markersize=12)
-    plt.xlabel("Viscosity ratio " + r'$K$', size=16)
-    plt.ylabel("Normalised wavelength " + r'$\lambda / L$', size=16)
-    plt.title("Wavelength against viscosity ratio", size=16)
+    
+    #errors = []
+    freqs_diff = []
+    lambdas_diff = []
+    maxcurvs_diff = []
+
+    for i in range(len(lambdas) - 1):
+        #worm_coarse = final_worm_positions[i]
+        #worm_fine = final_worm_positions[i+1]
+
+        #point_distances = np.linalg.norm(worm_coarse - worm_fine, axis=1)
+
+        #errors.append(np.mean(point_distances))
+        freqs_diff.append(np.abs(freqs[i] - freqs[i+1]))
+        lambdas_diff.append(np.abs(lambdas[i] - lambdas[i+1]))
+        maxcurvs_diff.append(np.abs(maxcurvs[i] - maxcurvs[i+1]))
+
+
+
+    #errors = np.array(errors)
+
+    #print(errors)
+
+    #--------------worm position errors---------------
+    """plt.figure()
+    plt.plot(N_vals[:-1], errors, 'ko')
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.xlabel('N')
+    plt.ylabel('Difference in average distance')
+    
     plt.savefig(
-        OUTPUT_DIR / f"{SCRIPT_NAME} - wavelength.png",
+        OUTPUT_DIR / f"{SCRIPT_NAME} - dt errors.png",
+        dpi=300,
+        bbox_inches="tight"
+    )
+    plt.close()
+"""
+    #-------------wavelength errors-----------------
+    plt.figure()
+    plt.plot(N_vals[:-1], lambdas_diff, 'ko')
+    plt.yscale('log')
+    plt.xlabel('N')
+    plt.ylabel('Difference in wavelength')
+    plt.xscale('log', base=2) 
+
+    plt.savefig(
+        OUTPUT_DIR / f"{SCRIPT_NAME} - wavelength differences.png",
         dpi=300,
         bbox_inches="tight"
     )
     plt.close()
 
 
-
+    #--------------frequency diffs-----------
     plt.figure()
-    plt.plot(K_vals[1:-1], frequencies[1:-1], 'ko')
-    plt.plot(K_vals[0], frequencies[0], 'r*', markersize=12)
-    plt.plot(K_vals[-1], frequencies[-1], 'r*', markersize=12)
-    plt.xlabel("Viscosity ratio " + r'$K$', size=16)
-    plt.ylabel(r'$\text{Frequency} \, \mathrm{Hz}$', size=16)
-    plt.title("Frequency against viscosity ratio", size=16)
+    plt.plot(N_vals[:-1], freqs_diff, 'ko')
+    plt.yscale('log')
+    plt.xlabel('N')
+    plt.ylabel('Difference in frequency')
+    plt.xscale('log', base=2) 
+
     plt.savefig(
-        OUTPUT_DIR / f"{SCRIPT_NAME} - frequency.png",
+        OUTPUT_DIR / f"{SCRIPT_NAME} - frequency differences.png",
         dpi=300,
         bbox_inches="tight"
     )
     plt.close()
 
+    #--------------curvature amplitude diffs------------
+    plt.figure()
+    plt.plot(N_vals[:-1], maxcurvs_diff, 'ko')
+    plt.yscale('log')
+    plt.xlabel('N')
+    plt.ylabel('Difference in curvature amplitude')
+    plt.xscale('log', base=2) 
 
-       
+    plt.savefig(
+        OUTPUT_DIR / f"{SCRIPT_NAME} - curvature amplitude differences.png",
+        dpi=300,
+        bbox_inches="tight"
+    )
+    plt.close()
+

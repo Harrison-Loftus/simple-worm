@@ -34,7 +34,7 @@ print(eta_tilde)
 l = L / N # segment length
 
 
-range_percentage = 0.75
+range_percentage = 0.5
 
 range_val = int(N * range_percentage)
 
@@ -54,10 +54,15 @@ W_p = proprioception_matrix(N, range_val)
 
 W_p = W_p / np.maximum(W_p.sum(axis=1, keepdims=True), 1)
 
+ablation_range = 0.15
 
-W_g = np.zeros((N, N), float)
-for i in range(N):
-    for j in range(N):
+W_p[int(N * (1 - ablation_range)): ,:] = 0
+
+print(W_p)
+
+W_g = np.zeros((N_controls, N_controls), float)
+for i in range(N_controls):
+    for j in range(N_controls):
         if i == j:
             if i == 0 or i == N-1:
                 W_g[i, j] = -1
@@ -87,13 +92,19 @@ def ODEs(t, state, kappa):
     V_D = state[2*N_muscular + N_controls: 2*N_muscular + 2*N_controls]
     
     epsilon_g = 0.0
-    epsilon_p = 1.0 
-    
+    epsilon_p = 2.0 
+    c_p = 0.5
     P = W_p @ kappa
+
+    epsilon_g * W_g 
     
     P_regions = np.array_split(P, N_controls)
     P_ctrl = np.array([np.mean(region) for region in P_regions])
     
+    kappa_regions = np.array_split(kappa, N_controls)
+    kappa_ctrl = np.array([np.mean(region) for region in kappa_regions])
+    
+
     repeat_fact = N_muscular // N_controls
     repeat_fact_neural_to_body = N // N_controls
     
@@ -107,8 +118,8 @@ def ODEs(t, state, kappa):
     dA_Vdt = (1/tau_m) * (-A_V + sigma(V_V_ctrl - V_D_ctrl))
     dA_Ddt = (1/tau_m) * (-A_D + sigma(V_D_ctrl - V_V_ctrl))
 
-    dV_Vdt = (1/tau_n)*(F(V_V) - epsilon_p * P_ctrl) #+ epsilon_g * W_g @ V_V)
-    dV_Ddt = (1/tau_n)*(F(V_D) + epsilon_p * P_ctrl) #+ epsilon_g * W_g @ V_D) 
+    dV_Vdt = (1/tau_n)*(F(V_V) - epsilon_p * P_ctrl + epsilon_g * W_g @ V_V)
+    dV_Ddt = (1/tau_n)*(F(V_D) + epsilon_p * P_ctrl + epsilon_g * W_g @ V_D) 
     results = np.concatenate([dA_Vdt, dA_Ddt, dV_Vdt, dV_Ddt])
 
     return results    
