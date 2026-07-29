@@ -17,7 +17,7 @@ from velocity_calc import Average_Velocity
 from hilbert_calc import Hilbert_Transform
 from simple_worm_viewer_pyqtgraph import view_worm_pyqtgraph
 
-from kymograph import *
+from kymo_improve import *
 
 import time
 
@@ -312,7 +312,7 @@ def example4():
     
     # wave parameters
     Amp = 10.0
-    lam = 1.0
+    lam = 0.66
     omega = 1.0
 
     # specific forcing function
@@ -388,8 +388,7 @@ if __name__ == "__main__":
     print("Max curvature: ", np.round(maxcurv, 2))
     print("Average velocity mm/s: ", np.round(velocity, 2))
 
-    times, kappa_peaks = finding_peaks(curvatures, t_eval, N)
-    wavelength_k, selection_time = lin_reg_wavelength(kappa_peaks, times, N)
+    wavelength_k, selection_time = lin_reg_wavelength(curvatures, t_eval, N)
 
     print("kymogram wavelength ", wavelength_k)
 
@@ -397,4 +396,4 @@ if __name__ == "__main__":
 
     print("time: ", np.round(tock - tick, 2))
 
-    view_worm_pyqtgraph(worm_positions, dt)
+    #view_worm_pyqtgraph(worm_positions, dt)

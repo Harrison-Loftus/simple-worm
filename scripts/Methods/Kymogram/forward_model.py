@@ -17,7 +17,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
-from scripts.Methods.Hilbert_Tests.hilbert_calc import Hilbert_Transform
+from scripts.Methods.Kymogram.kymo_improve import *
 
 # Outputs directory
 OUTPUT_DIR = Path("outputs")
@@ -223,7 +223,7 @@ def example4(lam):
 
 if __name__ == "__main__":
 
-    lam_vals = np.arange(0.2, 1.5, 0.1)
+    lam_vals = np.arange(0.8, 1.5, 0.1)
 
     wavelengths = np.empty(len(lam_vals), dtype=object)
     frequencies = np.empty(len(lam_vals), dtype=object)
@@ -236,8 +236,8 @@ if __name__ == "__main__":
 
 
         maxcurv = np.max(kappa)
-        wave, freq = Hilbert_Transform(kappa, N, N_controls, t_eval)
-
+        wave, freq = lin_reg_wavelength(kappa[:,int(-10/dt):], t_eval[int(-10/dt):], N)
+        
         wavelengths[i] = wave
         frequencies[i] = freq
 
@@ -250,7 +250,7 @@ if __name__ == "__main__":
     plt.figure()
     plt.plot(lam_vals, wavelengths)
     plt.xlabel(r'Imposed wavelength', size=12)
-    plt.ylabel(r'Hilbert computed wavelength', size=12)
+    plt.ylabel(r'Kymograph computed wavelength', size=12)
     plt.title(r'Computed wavelength against imposed wavelength', size=16)
     plt.savefig(
                 OUTPUT_DIR / f"{SCRIPT_NAME} - wavelength comparison.png",

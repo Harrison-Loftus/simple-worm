@@ -63,7 +63,7 @@ def plot_curve(x, filename="_tmp.png"):
 
 
 
-def example2(lam):
+def example2(omega):
     """
     This example shows how to call the simulator with a fenics function
     for forcing.
@@ -83,7 +83,8 @@ def example2(lam):
 
     # wave parameters
     A = 10.0
-    omega = 1.0
+    lam = 0.66
+    
 
     # specific forcing function
     def alpha_forcing(t, j):
@@ -129,7 +130,7 @@ def example2(lam):
     return worm_positions, kappas.T
 
 
-def example4(lam):
+def example4(omega):
     """
     This example shows how to call the simulator with a fenics function
     for forcing with a different set of material parameters
@@ -161,7 +162,7 @@ def example4(lam):
     
     # wave parameters
     Amp = 10.0
-    omega = 1.0
+    lam = 0.66
 
     # specific forcing function
     def alpha_forcing(t, j):
@@ -223,16 +224,16 @@ def example4(lam):
 
 if __name__ == "__main__":
 
-    lam_vals = np.arange(0.2, 1.5, 0.1)
+    omega_vals = np.arange(0.1, 5, 0.1)
 
-    wavelengths = np.empty(len(lam_vals), dtype=object)
-    frequencies = np.empty(len(lam_vals), dtype=object)
+    wavelengths = np.empty(len(omega_vals), dtype=object)
+    frequencies = np.empty(len(omega_vals), dtype=object)
 
     t_eval = np.arange(0,T,dt)
 
-    for i, lam in enumerate(lam_vals):
-        print("lam: ", lam)
-        worm_positions, kappa = example4(lam)
+    for i, omega in enumerate(omega_vals):
+        print("omega: ", omega)
+        worm_positions, kappa = example2(omega)
 
 
         maxcurv = np.max(kappa)
@@ -248,24 +249,24 @@ if __name__ == "__main__":
 
 
     plt.figure()
-    plt.plot(lam_vals, wavelengths)
-    plt.xlabel(r'Imposed wavelength', size=12)
-    plt.ylabel(r'Hilbert computed wavelength', size=12)
-    plt.title(r'Computed wavelength against imposed wavelength', size=16)
+    plt.plot(omega_vals, frequencies)
+    plt.xlabel(r'Imposed frequency', size=12)
+    plt.ylabel(r'Computed frequency', size=12)
+    plt.title(r'Computed frequency against imposed frequency', size=16)
     plt.savefig(
-                OUTPUT_DIR / f"{SCRIPT_NAME} - wavelength comparison.png",
-                dpi=300,
-                bbox_inches="tight"
-    )
+              OUTPUT_DIR / f"{SCRIPT_NAME} - frequency comparison.png",
+              dpi=300,
+              bbox_inches="tight"
+      )
     plt.close()
     
     plt.figure()
-    plt.plot(lam_vals, np.abs(lam_vals - wavelengths))
-    plt.xlabel(r'Imposed wavelength', size=12)
+    plt.plot(omega_vals, np.abs(omega_vals - frequencies))
+    plt.xlabel(r'Imposed frequency', size=12)
     plt.ylabel("Absolute error", size=12)
-    plt.title(r'Absolute error of computed wavelength', size=16)
+    plt.title(r'Absolute error of computed frequency', size=16)
     plt.savefig(
-            OUTPUT_DIR / f"{SCRIPT_NAME} - wavelength error.png",
+            OUTPUT_DIR / f"{SCRIPT_NAME} - frequency error.png",
             dpi=300,
             bbox_inches="tight"
     )
