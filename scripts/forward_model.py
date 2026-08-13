@@ -17,7 +17,7 @@ from velocity_calc import Average_Velocity
 from hilbert_calc import Hilbert_Transform
 from simple_worm_viewer_pyqtgraph import view_worm_pyqtgraph
 
-from kymo_improve import *
+from kymograph import *
 
 import time
 
@@ -174,7 +174,7 @@ def example2():
     worm_positions = []
     while t < T:
         t += dt
-
+        print(np.round(t, 2))
         # update control
         control[:] = [alpha_forcing(t, j) for j in range(N)]
 
@@ -313,7 +313,7 @@ def example4():
     # wave parameters
     Amp = 10.0
     lam = 0.66
-    omega = 1.0
+    omega = 0.1
 
     # specific forcing function
     def alpha_forcing(t, j):
@@ -388,10 +388,10 @@ if __name__ == "__main__":
     print("Max curvature: ", np.round(maxcurv, 2))
     print("Average velocity mm/s: ", np.round(velocity, 2))
 
-    wavelength_k, selection_time = lin_reg_wavelength(curvatures, t_eval, N)
+    wavelength_k, freq_k = lin_reg_wavelength(curvatures, t_eval, N)
 
     print("kymogram wavelength ", wavelength_k)
-
+    print("kymo freq", freq_k)
     tock = time.time()
 
     print("time: ", np.round(tock - tick, 2))

@@ -29,7 +29,7 @@ def lin_reg_wavelength(kappa, t_eval, n, n_controls):
 
     times, kappa_peaks = finding_peaks(kappa_reduced, t_eval, n_controls)
     
-    
+    print(len(times[0]))
 
     freqs = []
     for i in range(kappa_reduced.shape[0]):
@@ -42,12 +42,18 @@ def lin_reg_wavelength(kappa, t_eval, n, n_controls):
 
     heights = [(i + 0.5) / n_controls for i in range(n_controls)]
     wavelengths = []
+    tracks = []
     
     if np.isnan(freq):
         return np.nan, np.nan
 
-    
-    for start_peak in times[0][int(len(times[0]) * 0.25): int(len(times[0])* 0.75)]:
+    n_cycles = int(freq * (t_eval[-1] - t_eval[0]))
+    print("N cycles: ", n_cycles)
+    n_peaks = max(0, n_cycles // 3)
+    print(n_peaks)
+    print(len(times[0][:n_cycles]))
+
+    for start_peak in times[0][:n_peaks]:
         selection_time = [start_peak]    
         selection_curves = [] 
 
@@ -71,14 +77,14 @@ def lin_reg_wavelength(kappa, t_eval, n, n_controls):
             selection_time.append(t_list[idx])
 
         x = selection_time
-        y = heights[:len(x)]
+        y = heights
 
         m, c = np.polyfit(x,y,1)
 
         wavelength = abs(m) / freq
         wavelengths.append(wavelength)
 
-        """plt.figure()
+        plt.figure()
         plt.imshow(kappa, aspect='auto', extent=[t_eval[0], t_eval[-1], 0 , 1], origin='lower', cmap='bwr')
         cbar = plt.colorbar(label=r'Curvature (mm$^{-1}$)')
         cbar.ax.yaxis.label.set_size(12)
@@ -86,7 +92,7 @@ def lin_reg_wavelength(kappa, t_eval, n, n_controls):
         plt.ylabel('Body length (mm)', size=12)
         plt.title('Kymograph of a Recovered C. elegans in Agar', size=16)
         plt.plot(x, y, 'bo')
-        plt.show()"""
+        plt.show()
                 
     norm_wave = np.mean(wavelengths)
     return norm_wave, freq

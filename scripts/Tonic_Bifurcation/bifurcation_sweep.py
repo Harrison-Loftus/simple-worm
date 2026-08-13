@@ -18,11 +18,21 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from scripts.hilbert_calc import Hilbert_Transform
+from scripts.kymograph import *
+from scripts.hilbert_calc import *
 from scripts.simple_worm_viewer_pyqtgraph import view_worm_pyqtgraph
 from scripts.curvature_viewer import view_curvature_pyqtgraph
 
-from scripts.Johnson_Ranner.ODEs import *
+from scripts.Tonic_Bifurcation.ODEs import *
+
+from pathlib import Path
+import time
+
+# Outputs directory
+OUTPUT_DIR = Path("outputs")
+OUTPUT_DIR.mkdir(exist_ok=True)
+
+SCRIPT_NAME = Path(__file__).stem
 
 T = 30.0  # Final time - recommend several undulations
 
@@ -31,7 +41,7 @@ dt = 1.0e-2  # Time step - recommend ~1.0e-2 or lower
 t_eval = np.arange(0,T,dt)
 
 
-def example4():
+def simulation(I, epsilon_p):
     """
     This example shows how to call the simulator with a fenics function
     for forcing with a different set of material parameters
@@ -98,8 +108,8 @@ def example4():
 
     while t < T:
 
-        sols = solve_ivp(ODEs, (t, t+dt), ODE_state, method="RK45",
-                        max_step=dt,args=(kappa_init,))
+        sols = solve_ivp(ODEs, (t, t+dt), ODE_state, method="RK23",
+                        max_step=dt,args=(kappa_init,I,epsilon_p,))
 
         ODE_state = sols.y[:, -1]
 
@@ -108,8 +118,7 @@ def example4():
 
 
         t += dt
-        print(np.round(t,2))
-
+        
         repeat_factor = N // N_muscular
         betas = A_V - A_D       
         betas = np.repeat(betas, repeat_factor)
@@ -155,3 +164,69 @@ def example4():
     return worm_positions, kappas.T
 
 
+
+if __name__ == "__main__":
+    tick = time.time()
+    wavelengths = np.full((len(epsilon_p_vals), len(I_vals)), np.nan, dtype=float)
+    frequencies = np.full((len(epsilon_p_vals), len(I_vals)), np.nan, dtype=float)
+    max_curvatures = np.full((len(epsilon_p_vals), len(I_vals)), np.nan, dtype=float)
+    
+
+    for i, epsilon_p in enumerate(epsilon_p_vals):
+        print("eps: ", epsilon_p)
+        for j, I in enumerate(I_vals):
+            print("I: ", I)
+            worm_positions, curvatures = simulation(I, epsilon_p)
+            wave, freq = lin_reg_wavelength(curvatures[:,int(-20/dt):], t_eval[int(-20/dt):], N, N_controls)
+
+            max_curv = np.max(curvatures)
+
+            wavelengths[i,j] = wave
+            frequencies[i,j] = freq
+            max_curvatures[i,j] = max_curv
+
+            wave_h, freq_h = Hilbert_Transform(curvatures, N, N_controls, t_eval)
+
+
+            print("freq: ", freq)
+            print("wave: ", wave)
+            print("max curve: ", np.round(max_curv, 2))
+            print("wave_h: ", wave_h)
+            print("freq_h: ", freq_h)
+
+    cmap = plt.cm.bwr.copy()
+    cmap.set_bad('black')
+
+    plt.figure()
+    plt.imshow(wavelengths, aspect='auto', extent=[I_vals[0], I_vals[-1], epsilon_p_vals[0] , epsilon_p_vals[-1]], origin='lower', cmap=cmap)
+    cbar = plt.colorbar(label=r'Wavelength')
+    cbar.ax.yaxis.label.set_size(12)
+    plt.xlabel(r'Tonic input $I$', size=12)
+    plt.ylabel(r'Proprioceptive strength $\varepsilon_p$', size=12)
+    plt.title('Kymograph of wavelength for varying values of tonic input and proprioceptive strength', size=16)
+    plt.show()
+
+    cmap = plt.cm.bwr.copy()
+    cmap.set_bad('black')
+
+    plt.figure()
+    plt.imshow(frequencies, aspect='auto', extent=[I_vals[0], I_vals[-1], epsilon_p_vals[0] , epsilon_p_vals[-1]], origin='lower', cmap=cmap)
+    cbar = plt.colorbar(label=r'Frequency Hz')
+    cbar.ax.yaxis.label.set_size(12)
+    plt.xlabel(r'Tonic input $I$', size=12)
+    plt.ylabel(r'Proprioceptive strength $\varepsilon_p$', size=12)
+    plt.title('Kymograph of frequency for varying values of tonic input and proprioceptive strength', size=16)
+    plt.show()
+
+
+    cmap = plt.cm.bwr.copy()
+    cmap.set_bad('black')
+
+    plt.figure()
+    plt.imshow(max_curvatures, aspect='auto', extent=[I_vals[0], I_vals[-1], epsilon_p_vals[0] , epsilon_p_vals[-1]], origin='lower', cmap=cmap)
+    cbar = plt.colorbar(label=r'Frequency Hz')
+    cbar.ax.yaxis.label.set_size(12)
+    plt.xlabel(r'Tonic input $I$', size=12)
+    plt.ylabel(r'Proprioceptive strength $\varepsilon_p$', size=12)
+    plt.title('Kymograph of maximum curvature for varying values of tonic input and proprioceptive strength', size=16)
+    plt.show()

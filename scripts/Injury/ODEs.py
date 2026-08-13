@@ -54,6 +54,10 @@ W_p = proprioception_matrix(N, range_val)
 
 W_p = W_p / np.maximum(W_p.sum(axis=1, keepdims=True), 1)
 
+ablation_range = 0.15
+
+W_p[int(N * (1 - ablation_range)): ,:] = 0
+
 
 W_g = np.zeros((N_controls, N_controls), float)
 for i in range(N_controls):
@@ -75,7 +79,15 @@ def sigma(A):
 
 
 def F(V):
-    return V - V**3 
+    I = -0.1
+    for i in range(len(V)):
+        if i < int(N * (1 - ablation_range)):
+            V[i] = V[i] - V[i]**3 + 0
+        else:
+            V[i] = V[i] - V[i]**3 + I
+
+    return V
+
 
 
 def ODEs(t, state, kappa):
@@ -87,7 +99,7 @@ def ODEs(t, state, kappa):
     V_D = state[2*N_muscular + N_controls: 2*N_muscular + 2*N_controls]
     
     epsilon_g = 0.0
-    epsilon_p = 0.5
+    epsilon_p = 1.0 
     c_p = 0.5
     P = W_p @ kappa
 

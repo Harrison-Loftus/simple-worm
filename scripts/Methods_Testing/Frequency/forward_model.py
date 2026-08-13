@@ -17,7 +17,8 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
-from scripts.Methods.Hilbert_Tests.hilbert_calc import Hilbert_Transform
+from scripts.Methods_Testing.Frequency.hilbert_calc import Hilbert_Transform
+from scripts.Methods_Testing.Frequency.kymograph import *
 
 # Outputs directory
 OUTPUT_DIR = Path("outputs")
@@ -29,7 +30,7 @@ SCRIPT_NAME = Path(__file__).stem
 N = 120  # Number of body points - recommend ~100
 
 N_controls = 6
-T = 30.0  # Final time - recommend several undulations
+T = 10.0  # Final time - recommend several undulations
 dt = 1.0e-2  # Time step - recommend ~1.0e-2 or lower
 n_timesteps = int(T / dt)
 
@@ -226,8 +227,12 @@ if __name__ == "__main__":
 
     omega_vals = np.arange(0.1, 5, 0.1)
 
-    wavelengths = np.empty(len(omega_vals), dtype=object)
-    frequencies = np.empty(len(omega_vals), dtype=object)
+    wavelengthsh = np.empty(len(omega_vals), dtype=object)
+    frequenciesh = np.empty(len(omega_vals), dtype=object)
+
+    wavelengthsk = np.empty(len(omega_vals), dtype=object)
+    frequenciesk = np.empty(len(omega_vals), dtype=object)
+    
 
     t_eval = np.arange(0,T,dt)
 
@@ -237,19 +242,29 @@ if __name__ == "__main__":
 
 
         maxcurv = np.max(kappa)
-        wave, freq = Hilbert_Transform(kappa, N, N_controls, t_eval)
+        waveh, freqh = Hilbert_Transform(kappa, N, N_controls, t_eval)
 
-        wavelengths[i] = wave
-        frequencies[i] = freq
+        wavelengthsh[i] = waveh
+        frequenciesh[i] = freqh
 
-        print("Wavelength: ", np.round(wave, 2))
-        print("Frequency Hz: ", np.round(freq, 2))
+        wavek, freqk = lin_reg_wavelength(kappa, t_eval, N)
+
+        wavelengthsk[i] = wavek
+        frequenciesk[i] = freqk
+
+
+        print("Wavelength Hilbert: ", np.round(waveh, 2))
+        print("Frequency Hz Hilbert: ", np.round(freqh, 2))
         print("Max curvature: ", np.round(maxcurv, 2))
+
+        print("Wavelength Kymo: ", np.round(wavek, 2))
+        print("Frequency Hz Kymo: ", np.round(freqk, 2))
+                
 
 
 
     plt.figure()
-    plt.plot(omega_vals, frequencies)
+    plt.plot(omega_vals, frequenciesh)
     plt.xlabel(r'Imposed frequency', size=12)
     plt.ylabel(r'Computed frequency', size=12)
     plt.title(r'Computed frequency against imposed frequency', size=16)
@@ -261,12 +276,36 @@ if __name__ == "__main__":
     plt.close()
     
     plt.figure()
-    plt.plot(omega_vals, np.abs(omega_vals - frequencies))
+    plt.plot(omega_vals, np.abs(omega_vals - frequenciesh))
     plt.xlabel(r'Imposed frequency', size=12)
     plt.ylabel("Absolute error", size=12)
     plt.title(r'Absolute error of computed frequency', size=16)
     plt.savefig(
             OUTPUT_DIR / f"{SCRIPT_NAME} - frequency error.png",
+            dpi=300,
+            bbox_inches="tight"
+    )
+    plt.close()
+
+    plt.figure()
+    plt.plot(omega_vals, frequenciesk)
+    plt.xlabel(r'Imposed frequency', size=12)
+    plt.ylabel(r'Computed frequency', size=12)
+    plt.title(r'Computed frequency against imposed frequency', size=16)
+    plt.savefig(
+                OUTPUT_DIR / f"{SCRIPT_NAME} - frequency comparison Kymo.png",
+                dpi=300,
+                bbox_inches="tight"
+        )
+    plt.close()
+    
+    plt.figure()
+    plt.plot(omega_vals, np.abs(omega_vals - frequenciesk))
+    plt.xlabel(r'Imposed frequency', size=12)
+    plt.ylabel("Absolute error", size=12)
+    plt.title(r'Absolute error of computed frequency', size=16)
+    plt.savefig(
+            OUTPUT_DIR / f"{SCRIPT_NAME} - frequency error Kymo.png",
             dpi=300,
             bbox_inches="tight"
     )

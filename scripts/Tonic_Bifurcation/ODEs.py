@@ -33,6 +33,8 @@ print(eta_tilde)
 
 l = L / N # segment length
 
+epsilon_p_vals = np.arange(0.0, 1.1, 0.1)
+I_vals = np.arange(-0.5, 0.6, 0.1)
 
 range_percentage = 0.5
 
@@ -74,11 +76,11 @@ def sigma(A):
     return 0.5 * c_m * (np.tanh((A - a_0)*c_s) + 1)
 
 
-def F(V):
-    return V - V**3 
+def F(V,I):
+    return V - V**3 + I
 
 
-def ODEs(t, state, kappa):
+def ODEs(t, state, kappa, I, epsilon_p):
     
     
     A_V = state[0: N_muscular]
@@ -87,7 +89,7 @@ def ODEs(t, state, kappa):
     V_D = state[2*N_muscular + N_controls: 2*N_muscular + 2*N_controls]
     
     epsilon_g = 0.0
-    epsilon_p = 0.5
+    
     c_p = 0.5
     P = W_p @ kappa
 
@@ -113,8 +115,8 @@ def ODEs(t, state, kappa):
     dA_Vdt = (1/tau_m) * (-A_V + sigma(V_V_ctrl - V_D_ctrl))
     dA_Ddt = (1/tau_m) * (-A_D + sigma(V_D_ctrl - V_V_ctrl))
 
-    dV_Vdt = (1/tau_n)*(F(V_V) - epsilon_p * P_ctrl + epsilon_g * W_g @ V_V)
-    dV_Ddt = (1/tau_n)*(F(V_D) + epsilon_p * P_ctrl + epsilon_g * W_g @ V_D) 
+    dV_Vdt = (1/tau_n)*(F(V_V, I) - epsilon_p * P_ctrl + epsilon_g * W_g @ V_V)
+    dV_Ddt = (1/tau_n)*(F(V_D, I) + epsilon_p * P_ctrl + epsilon_g * W_g @ V_D) 
     results = np.concatenate([dA_Vdt, dA_Ddt, dV_Vdt, dV_Ddt])
 
     return results    

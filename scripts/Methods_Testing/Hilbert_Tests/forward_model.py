@@ -17,7 +17,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
-from scripts.Methods.Hilbert_Tests.hilbert_calc import Hilbert_Transform
+from scripts.Methods_Testing.Hilbert_Tests.hilbert_calc import Hilbert_Transform
 
 # Outputs directory
 OUTPUT_DIR = Path("outputs")

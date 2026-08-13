@@ -17,7 +17,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
-from scripts.Methods.Kymogram.kymo_improve import *
+from scripts.Methods_Testing.Kymogram.kymo_new import *
 
 # Outputs directory
 OUTPUT_DIR = Path("outputs")
@@ -236,7 +236,7 @@ if __name__ == "__main__":
 
 
         maxcurv = np.max(kappa)
-        wave, freq = lin_reg_wavelength(kappa[:,int(-10/dt):], t_eval[int(-10/dt):], N)
+        wave, freq = lin_reg_wavelength(kappa[:,int(-10/dt):], t_eval[int(-10/dt):], N, N_controls)
         
         wavelengths[i] = wave
         frequencies[i] = freq

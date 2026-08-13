@@ -1,6 +1,5 @@
 import numpy as np
 from scipy.signal import find_peaks
-import matplotlib.pyplot as plt
 
 
 
@@ -31,13 +30,19 @@ def lin_reg_wavelength(kappa, t_eval, n):
             for j in range(len(times[i])-1):
                     a = times[i][j+1] - times[i][j]
                     freqs.append(1/a)
+        if len(freqs) == 0:
+            return np.nan
         return np.mean(freqs)
 
     heights = [(i + 0.5) / n for i in range(n)]
     wavelengths = []
     tracks = []
+    
     freq = frequency_calc(times, n)
-    for start_peak in times[0][:int((t_eval[0] - t_eval[-1])/(freq * 2))]:
+    if np.isnan(freq):
+        return np.nan, np.nan
+
+    for start_peak in times[0][:int((t_eval[0] - t_eval[-1])/(freq * 3))]:
         selection_time = [start_peak]    
         selection_curves = [] 
 
@@ -46,33 +51,15 @@ def lin_reg_wavelength(kappa, t_eval, n):
             t_list = np.array(times[i])
 
             
-            
-
             diffs = np.abs(t_list - selection_time[-1])
             idx = np.argmin(diffs)
 
-            # stop tracking if nearest peak is too far away
             
-
             selection_curves.append(curv_list[idx])
             selection_time.append(t_list[idx])
 
-        
-    
-
         x = selection_time
         y = heights
-
-        plt.figure()
-        plt.imshow(kappa, aspect='auto', extent=[t_eval[0], t_eval[-1], 0 , 1], origin='lower', cmap='bwr')
-        cbar = plt.colorbar(label=r'Curvature (mm$^{-1}$)')
-        cbar.ax.yaxis.label.set_size(12)
-        plt.xlabel('Time (s)', size=12)
-        plt.ylabel('Body length (mm)', size=12)
-        plt.title('Kymograph of a Recovered C. elegans in Agar', size=16)
-        plt.plot(x, y, 'bo')
-        plt.show()
-        
 
         m, c = np.polyfit(x,y,1)
 
@@ -80,4 +67,4 @@ def lin_reg_wavelength(kappa, t_eval, n):
         wavelengths.append(wavelength)
 
     norm_wave = np.mean(wavelengths)
-    return norm_wave, selection_time
+    return norm_wave, freq
