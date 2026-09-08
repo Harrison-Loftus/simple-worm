@@ -35,18 +35,9 @@ l = L / N # segment length
  
 
 
-#epsilon_p_vals = np.arange(0.0, 1.1, 0.1)
+epsilon_p_vals = np.array([1.0])
 
-epsilon_p_vals = np.array([0.2])
-
-I_arrays = []
-
-for i, eps in enumerate(epsilon_p_vals):
-    I_c_guess = 0.3*np.sqrt(eps)
-
-    I_vals = np.linspace(0.0, 0.078, 10)
-    I_arrays.append(I_vals)
-
+I_vals = np.linspace(0.0, 0.5, 50)
 
 range_percentage = 0.5
 
@@ -92,7 +83,7 @@ def F(V,I):
     return V - V**3 + I
 
 
-def ODEs(t, state, kappa, I, epsilon_p):
+def ODEs(t, state, I, epsilon_p):
     
     
     A_V = state[0: N_muscular]
@@ -101,7 +92,9 @@ def ODEs(t, state, kappa, I, epsilon_p):
     V_D = state[2*N_muscular + N_controls: 2*N_muscular + 2*N_controls]
     
     epsilon_g = 0.0
-    
+
+    kappa = np.repeat(A_V - A_D, 2)
+
     c_p = 0.5
     P = W_p @ kappa
 

@@ -47,11 +47,20 @@ kappavdiff_dir.mkdir(parents=True, exist_ok=True)
 kappadkappadt_dir = BASE_DIR / "kappa_phase"
 kappadkappadt_dir.mkdir(parents=True, exist_ok=True)
 
+kappatime_dir = BASE_DIR / "kappa_time"
+kappatime_dir.mkdir(parents=True, exist_ok=True)
+
 AVdAVdt_dir = BASE_DIR / "AV_phase"
 AVdAVdt_dir.mkdir(parents=True, exist_ok=True)
 
+AVtime_dir = BASE_DIR / "AV_time"
+AVtime_dir.mkdir(parents=True, exist_ok=True)
+
 VVdVVdt_dir = BASE_DIR / "VV_phase"
 VVdVVdt_dir.mkdir(parents=True, exist_ok=True)
+
+VVtime_dir = BASE_DIR / "VV_time"
+VVtime_dir.mkdir(parents=True, exist_ok=True)
 
 T = 30.0  # Final time - recommend several undulations
 
@@ -125,10 +134,19 @@ def simulation(I, epsilon_p):
     kappas = []
     worm_positions = []
 
+    
+    A_V_head_vals = []
+    V_V_head_vals = []
+    V_D_head_vals = []
+
     A_V_mid_vals = []
-    A_D_mid_vals = []
     V_V_mid_vals = []
     V_D_mid_vals = []
+    
+
+    A_V_tail_vals = []
+    V_V_tail_vals = []
+    V_D_tail_vals = []
 
     while t < T:
 
@@ -142,16 +160,33 @@ def simulation(I, epsilon_p):
         V_V = ODE_state[2*N_muscular: 2*N_muscular + N_controls]
         V_D = ODE_state[2*N_muscular + N_controls: 2*N_muscular + 2*N_controls]
 
+    
+        A_V_head = A_V[0]
+        V_V_head = V_V[0]
+        V_D_head = V_D[0]
+
         A_V_mid = A_V[N_muscular//2]
-        A_D_mid = A_D[N_muscular//2]
         V_V_mid = V_V[N_controls//2]
         V_D_mid = V_D[N_controls//2]
 
+
+        A_V_tail = A_V[-1]
+        V_V_tail = V_V[-1]
+        V_D_tail = V_D[-1]
+
+
         A_V_mid_vals.append(A_V_mid)
-        A_D_mid_vals.append(A_D_mid)
         V_V_mid_vals.append(V_V_mid)
         V_D_mid_vals.append(V_D_mid)
 
+
+        A_V_head_vals.append(A_V_head)
+        V_V_head_vals.append(V_V_head)
+        V_D_head_vals.append(V_D_head)
+
+        A_V_tail_vals.append(A_V_tail)
+        V_V_tail_vals.append(V_V_tail)
+        V_D_tail_vals.append(V_D_tail)
 
         t += dt
         
@@ -195,27 +230,34 @@ def simulation(I, epsilon_p):
 
         #print(np.max(betas), np.max(kappa_init))
         
+    A_V_vals = np.array([A_V_head_vals, A_V_mid_vals, A_V_tail_vals])
+    V_V_vals = np.array([V_V_head_vals, V_V_mid_vals, V_V_tail_vals])
+    V_D_vals = np.array([V_D_head_vals, V_D_mid_vals, V_D_tail_vals])
     kappas = np.array(kappas)
     worm_positions = np.array(worm_positions)
-    return worm_positions, kappas.T, A_V_mid_vals, A_D_mid_vals, V_V_mid_vals, V_D_mid_vals
+    return worm_positions, kappas.T, A_V_vals, V_V_vals, V_D_vals
 
 
 
 if __name__ == "__main__":
-    epsilon_p_vals = np.arange(0.02, 0.21, 0.01)
-    I_vals = np.arange(0.0, 0.05, 0.01)
-
     tick = time.time()
-    wavelengths = np.full((len(epsilon_p_vals), len(I_vals)), np.nan, dtype=float)
-    frequencies = np.full((len(epsilon_p_vals), len(I_vals)), np.nan, dtype=float)
-    max_curvatures = np.full((len(epsilon_p_vals), len(I_vals)), np.nan, dtype=float)
+    epsilon_p_vals = np.arange(0.09, 1.19, 0.1)
+    print("epsilon_p_vals: ", epsilon_p_vals)
+    print(len(epsilon_p_vals))
+    I_vals = np.logspace(-3, 0, 10)
+    print("I_vals: ", I_vals)
     
+
+    wavelengths = np.full((len(epsilon_p_vals), len(I_arrays[-1])), np.nan, dtype=float)
+    frequencies = np.full((len(epsilon_p_vals), len(I_arrays[-1])), np.nan, dtype=float)
+    max_curvatures = np.full((len(epsilon_p_vals), len(I_arrays[-1])), np.nan, dtype=float)
 
     for i, epsilon_p in enumerate(epsilon_p_vals):
         print("eps: ", epsilon_p)
+            
         for j, I in enumerate(I_vals):
             print("I: ", I)
-            worm_positions, curvatures, A_V, A_D, V_V, V_D = simulation(I, epsilon_p)
+            worm_positions, curvatures, A_V, V_V, V_D = simulation(I, epsilon_p)
             wave, freq = lin_reg_wavelength(curvatures[:,int(-20/dt):], t_eval[int(-20/dt):], N, N_controls)
 
             max_curv = np.max(curvatures)
@@ -227,7 +269,7 @@ if __name__ == "__main__":
             wave_h, freq_h = Hilbert_Transform(curvatures, N, N_controls, t_eval)
 
             anim = create_worm_animation(worm_positions[int(-10/dt):,:,:], dt)
-            filename = (anim_dir / f"{SCRIPT_NAME}_eps{epsilon_p:.2f}_I{I:.2f}.mp4")
+            filename = (anim_dir / f"{SCRIPT_NAME}_eps{epsilon_p:.2f}_I{I:.4f}.mp4")
             anim.save(filename, writer="ffmpeg", fps = int(round(1/dt)), dpi=150)
             plt.close("all")
 
@@ -238,77 +280,156 @@ if __name__ == "__main__":
             print("wave_h: ", wave_h)
             print("freq_h: ", freq_h)
 
+            k_head = curvatures[0, int(-20/dt):]
             k_mid = curvatures[N//2, int(-20/dt):]
-            
-            vdiff = np.array(V_V[int(-20/dt):]) - np.array(V_D[int(-20/dt):])
-        
-        
-            dkdt = np.gradient(k_mid, dt)
-            davdt = np.gradient(A_V[int(-20/dt):], dt)
-            dVvdt = np.gradient(V_V[int(-20/dt):], dt)
+            k_tail = curvatures[-1, int(-20/dt):]
+
+            dkdt_head = np.gradient(k_head, dt)        
+            dkdt_mid = np.gradient(k_mid, dt)
+            dkdt_tail = np.gradient(k_tail, dt)
+
+
+            A_V_head = A_V[0]
+            A_V_mid = A_V[1]
+            A_V_tail = A_V[2]
+
+            V_V_head = V_V[0]
+            V_V_mid = V_V[1]
+            V_V_tail = V_V[2]
+
+            V_D_head = V_D[0]
+            V_D_mid = V_D[1]
+            V_D_tail = V_D[2]
+
+            davdt_head = np.gradient(A_V_head[int(-20/dt):], dt)
+            davdt_mid = np.gradient(A_V_mid[int(-20/dt):], dt)
+            davdt_tail = np.gradient(A_V_tail[int(-20/dt):], dt)
+
+            dVvdt_head = np.gradient(V_V_head[int(-20/dt):], dt)
+            dVvdt_mid = np.gradient(V_V_mid[int(-20/dt):], dt)
+            dVvdt_tail = np.gradient(V_V_tail[int(-20/dt):], dt)
+
+            V_diff_head = V_V_head[int(-20/dt):] - V_D_head[int(-20/dt):]
+            V_diff_mid = V_V_mid[int(-20/dt):] - V_D_mid[int(-20/dt):]
+            V_diff_tail = V_V_tail[int(-20/dt):] - V_D_tail[int(-20/dt):]
 
             #---------Kappa vs V diff--------------
             plt.figure()
-            plt.plot(vdiff, k_mid, 'k')
-            plt.xlabel(r'$V_V - V_D$', size=12)
+            plt.plot(V_diff_head, k_head, '--', label='Head', color='blue', )
+            plt.plot(V_diff_mid, k_mid, '--',label='Middle', color='green')
+            plt.plot(V_diff_tail, k_tail, '--',label='Tail', color='red')
+            plt.legend(loc='upper right', bbox_to_anchor=(1.2, 1))
+            plt.xlabel(r'$V_\text{V} - V_\text{D}$', size=12)
             plt.ylabel(r'$\kappa$', size=12)
-            plt.title(f'Phase portrait of kappa vs V diff for eps={epsilon_p:.2f} and I={I:.2f}', size=12)
+            plt.title(f'Phase portrait of kappa vs V diff for eps={epsilon_p:.2f} and I={I:.4f}', size=12)
             plt.tight_layout()
-            plt.savefig(kappavdiff_dir / f"vdiff_kappa_eps{epsilon_p:.2f}_I{I:.2f}.png", dpi=150)
+            plt.savefig(kappavdiff_dir / f"vdiff_kappa_eps{epsilon_p:.2f}_I{I:.4f}.png", dpi=150)
 
             #---------Kappa vs dKappa/dt--------------
             plt.figure()
-            plt.plot(k_mid, dkdt, 'k')
+            plt.plot(k_head, dkdt_head, '--', label='Head', color='blue')
+            plt.plot(k_mid, dkdt_mid, '--', label='Middle', color='green')
+            plt.plot(k_tail, dkdt_tail, '--', label='Tail', color='red')
+            plt.legend(loc='upper right', bbox_to_anchor=(1.2, 1))
             plt.xlabel(r'$\kappa$', size=12)
-            plt.ylabel(r'$\frac{dkappa}{dt}$', size=12)
-            plt.title(f'Phase portrait of kappa vs dkappa/dt for eps={epsilon_p:.2f} and I={I:.2f}', size=12)
+            plt.ylabel(r'$\frac{d\kappa}{dt}$', size=12)
+            plt.title(f'Phase portrait of kappa vs dkappa/dt for eps={epsilon_p:.2f} and I={I:.4f}', size=12)
             plt.tight_layout()
-            plt.savefig(kappadkappadt_dir / f"kappa_dkappa_dt_eps{epsilon_p:.2f}_I{I:.2f}.png", dpi=150)
-        
+            plt.savefig(kappadkappadt_dir / f"kappa_dkappa_dt_eps{epsilon_p:.2f}_I{I:.4f}.png", dpi=150)
+
+
+            #--------Kappa vs time--------------
+            plt.figure()
+            plt.plot(t_eval[int(-20/dt):], k_head, '--', label='Head', color='blue')
+            plt.plot(t_eval[int(-20/dt):], k_mid, '--', label='Middle', color='green')
+            plt.plot(t_eval[int(-20/dt):], k_tail, '--', label='Tail', color='red')
+            plt.legend(loc='upper right', bbox_to_anchor=(1.2, 1))
+            plt.xlabel(r'$t$', size=12) 
+            plt.ylabel(r'$\kappa$', size=12)
+            plt.title(f'Kappa vs time for eps={epsilon_p:.2f} and I={I:.4f}', size=12)
+            plt.tight_layout()
+            plt.savefig(kappatime_dir / f"kappa_time_eps{epsilon_p:.2f}_I{I:.4f}.png", dpi=150)
+
             #---------A_V vs dA_V/dt--------------
             plt.figure()
-            plt.plot(A_V[int(-20/dt):], davdt, 'k')
+            plt.plot(A_V_head[int(-20/dt):], davdt_head, '--', label='Head', color='blue')
+            plt.plot(A_V_mid[int(-20/dt):], davdt_mid, '--', label='Middle', color='green')
+            plt.plot(A_V_tail[int(-20/dt):], davdt_tail, '--', label='Tail', color='red')
+            plt.legend(loc='upper right', bbox_to_anchor=(1.2, 1))
             plt.xlabel(r'$A_V$', size=12)
             plt.ylabel(r'$\frac{dA_V}{dt}$', size=12)
-            plt.title(f'Phase portrait of A_V vs dA_V/dt for eps={epsilon_p:.2f} and I={I:.2f}', size=12)
+            plt.title(f'Phase portrait of A_V vs dA_V/dt for eps={epsilon_p:.2f} and I={I:.4f}', size=12)
             plt.tight_layout()
-            plt.savefig(AVdAVdt_dir / f"AV_dAV_dt_eps{epsilon_p:.2f}_I{I:.2f}.png", dpi=150)
+            plt.savefig(AVdAVdt_dir / f"AV_dAV_dt_eps{epsilon_p:.2f}_I{I:.4f}.png", dpi=150)
+
+            #---------A_V vs time--------------
+            plt.figure()
+            plt.plot(t_eval[int(-20/dt):], A_V_head[int(-20/dt):], '--', label='Head', color='blue')
+            plt.plot(t_eval[int(-20/dt):], A_V_mid[int(-20/dt):], '--', label='Middle', color='green')
+            plt.plot(t_eval[int(-20/dt):], A_V_tail[int(-20/dt):], '--', label='Tail', color='red')
+            plt.legend(loc='upper right', bbox_to_anchor=(1.2, 1))
+            plt.xlabel(r'$t$', size=12)
+            plt.ylabel(r'$A_V$', size=12)
+            plt.title(f'A_V vs time for eps={epsilon_p:.2f} and I={I:.4f}', size=12)
+            plt.tight_layout()
+            plt.savefig(AVtime_dir / f"AV_time_eps{epsilon_p:.2f}_I{I:.4f}.png", dpi=150)
 
             #---------V_V vs dV_V/dt--------------
             plt.figure()
-            plt.plot(V_V[int(-20/dt):], dVvdt, 'k')
+            plt.plot(V_V_head[int(-20/dt):], dVvdt_head, '--', label='Head', color='blue')
+            plt.plot(V_V_mid[int(-20/dt):], dVvdt_mid, '--', label='Middle', color='green')
+            plt.plot(V_V_tail[int(-20/dt):], dVvdt_tail, '--', label='Tail', color='red')
+            plt.legend(loc='upper right', bbox_to_anchor=(1.2, 1))
             plt.xlabel(r'$V_V$', size=12)
             plt.ylabel(r'$\frac{dV_V}{dt}$', size=12)
-            plt.title(f'Phase portrait of V_V vs dV_V/dt for eps={epsilon_p:.2f} and I={I:.2f}', size=12)
+            plt.title(f'Phase portrait of V_V vs dV_V/dt for eps={epsilon_p:.2f} and I={I:.4f}', size=12)
             plt.tight_layout()
-            plt.savefig(VVdVVdt_dir / f"VV_dVV_dt_eps{epsilon_p:.2f}_I{I:.2f}.png", dpi=150)
+            plt.savefig(VVdVVdt_dir / f"VV_dVV_dt_eps{epsilon_p:.2f}_I{I:.4f}.png", dpi=150)
+            
+
+            #---------V_V vs time--------------
+            plt.figure()
+            plt.plot(t_eval[int(-20/dt):], V_V_head[int(-20/dt):], '--', label='Head', color='blue')
+            plt.plot(t_eval[int(-20/dt):], V_V_mid[int(-20/dt):], '--', label='Middle', color='green')
+            plt.plot(t_eval[int(-20/dt):], V_V_tail[int(-20/dt):], '--', label='Tail', color='red')
+            plt.legend(loc='upper right', bbox_to_anchor=(1.2, 1))
+            plt.xlabel(r'$t$', size=12)
+            plt.ylabel(r'$V_V$', size=12)
+            plt.title(f'V_V vs time for eps={epsilon_p:.2f} and I={I:.4f}', size=12)
+            plt.tight_layout()
+            plt.savefig(VVtime_dir / f"VV_time_eps{epsilon_p:.2f}_I{I:.4f}.png", dpi=150)
             plt.close("all")
 
 
-#-----------------Heat Map plots-------------
+
+    #-----------------Heat Map plots-------------
     cmap = plt.cm.bwr.copy()
     cmap.set_bad('black')
 
     plt.figure()
     plt.imshow(wavelengths, aspect='auto', extent=[I_vals[0], I_vals[-1], epsilon_p_vals[0] , epsilon_p_vals[-1]], origin='lower', cmap=cmap)
+    plt.xscale('log')
     cbar = plt.colorbar(label=r'Wavelength')
     cbar.ax.yaxis.label.set_size(12)
     plt.xlabel(r'Tonic input $I$', size=12)
     plt.ylabel(r'Proprioceptive strength $\varepsilon_p$', size=12)
-    plt.title('Kymograph of wavelength for varying values of tonic input and proprioceptive strength', size=16)
-    plt.show()
+    plt.title('Kymograph of wavelength for varying values\n'
+               'of tonic input and proprioceptive strength', size=16)
+    plt.savefig(BASE_DIR / f"wavelengths_heatmap.png", dpi=150)
 
     cmap = plt.cm.bwr.copy()
     cmap.set_bad('black')
 
     plt.figure()
     plt.imshow(frequencies, aspect='auto', extent=[I_vals[0], I_vals[-1], epsilon_p_vals[0] , epsilon_p_vals[-1]], origin='lower', cmap=cmap)
+    plt.xscale('log')
     cbar = plt.colorbar(label=r'Frequency Hz')
     cbar.ax.yaxis.label.set_size(12)
     plt.xlabel(r'Tonic input $I$', size=12)
     plt.ylabel(r'Proprioceptive strength $\varepsilon_p$', size=12)
-    plt.title('Kymograph of frequency for varying values of tonic input and proprioceptive strength', size=16)
-    plt.show()
+    plt.title('Kymograph of frequency for varying values\n'
+               'of tonic input and proprioceptive strength', size=16)
+    plt.savefig(BASE_DIR / f"frequencies_heatmap.png", dpi=150)
 
 
     cmap = plt.cm.bwr.copy()
@@ -316,9 +437,11 @@ if __name__ == "__main__":
 
     plt.figure()
     plt.imshow(max_curvatures, aspect='auto', extent=[I_vals[0], I_vals[-1], epsilon_p_vals[0] , epsilon_p_vals[-1]], origin='lower', cmap=cmap)
+    plt.xscale('log')
     cbar = plt.colorbar(label=r'Frequency Hz')
     cbar.ax.yaxis.label.set_size(12)
     plt.xlabel(r'Tonic input $I$', size=12)
     plt.ylabel(r'Proprioceptive strength $\varepsilon_p$', size=12)
-    plt.title('Kymograph of maximum curvature for varying values of tonic input and proprioceptive strength', size=16)
-    plt.show()
+    plt.title('Kymograph of maximum curvature for varying values\n'
+               'of tonic input and proprioceptive strength', size=16)
+    plt.savefig(BASE_DIR / f"max_curvatures_heatmap.png", dpi=150)

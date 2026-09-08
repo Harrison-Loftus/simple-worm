@@ -10,6 +10,7 @@ dependencies:
   - numpy >= 2.0
   - ipython
   - scipy
+  - PyDSTool
   - ffmpeg
   - matplotlib
   - pyqtgraph

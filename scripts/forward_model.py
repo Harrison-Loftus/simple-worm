@@ -19,12 +19,21 @@ from simple_worm_viewer_pyqtgraph import view_worm_pyqtgraph
 
 from kymograph import *
 from parameters import *
+from matplotlib_animate_worm import *
+
+from pathlib import Path
+
+# Outputs directory
+OUTPUT_DIR = Path("outputs")
+OUTPUT_DIR.mkdir(exist_ok=True)
+
+SCRIPT_NAME = Path(__file__).stem
 
 import time
 
 # Parameters
 
-T = 10.0  # Final time - recommend several undulations
+T = 30.0  # Final time - recommend several undulations
 dt = 1.0e-2  # Time step - recommend ~1.0e-2 or lower
 n_timesteps = int(T / dt)
 
@@ -359,6 +368,7 @@ if __name__ == "__main__":
     t_eval = np.arange(0,T,dt)
 
     worm_positions, curvatures = example4()
+    print(worm_positions.shape)
 
     maxcurv = np.max(curvatures)
     velocity = Average_Velocity(worm_positions, t_eval)
@@ -376,5 +386,8 @@ if __name__ == "__main__":
     tock = time.time()
 
     print("time: ", np.round(tock - tick, 2))
+
+    anim = create_worm_animation(worm_positions, dt)
+    anim.save(OUTPUT_DIR / f"{SCRIPT_NAME} - worm.mp4", writer="ffmpeg", fps = int(round(1/dt)), dpi=150)
 
     #view_worm_pyqtgraph(worm_positions, dt)

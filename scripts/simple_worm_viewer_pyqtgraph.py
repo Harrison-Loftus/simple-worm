@@ -22,7 +22,7 @@ def view_worm_pyqtgraph(worm_positions, dt):
     plot.getAxis('bottom').enableAutoSIPrefix(False)
     plot.getAxis('left').enableAutoSIPrefix(False)
 
-    plot.setTitle('Simulated Forward Locomotion of a Recovered C. elegans in Agar', color='k', size="16pt")
+    plot.setTitle('Simulated Forward Locomotion of a C. elegans in Agar', color='k', size="16pt")
 
     worm = plot.plot([], [], pen=pg.mkPen('k', width=5))
 
