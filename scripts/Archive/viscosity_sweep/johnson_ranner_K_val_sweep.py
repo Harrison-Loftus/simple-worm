@@ -16,7 +16,7 @@ from simple_worm.util import f2n, v2f
 
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
 from pathlib import Path
 
@@ -24,22 +24,28 @@ from pathlib import Path
 OUTPUT_DIR = Path("outputs")
 OUTPUT_DIR.mkdir(exist_ok=True)
 
+FOR_PAPER = Path(OUTPUT_DIR / "FOR_PAPER")
+FOR_PAPER.mkdir(exist_ok=True)
+
 SCRIPT_NAME = Path(__file__).stem
 
 from scripts.hilbert_calc import Hilbert_Transform
 from scripts.simple_worm_viewer_pyqtgraph import view_worm_pyqtgraph
 from scripts.curvature_viewer import view_curvature_pyqtgraph
+from scripts.kymograph import *
 
-from scripts.Archive.viscosity_sweep.ODEs import *
+from scripts.Johnson_Ranner.ODEs import *
+from scripts.parameters import *
 
 T = 10.0  # Final time - recommend several undulations
+T_max = 100.0
 
 dt = 1.0e-2  # Time step - recommend ~1.0e-2 or lower
 
 t_eval = np.arange(0,T,dt)
 
 
-def simulation(K_value):
+def simulation(k_value):
     """
     This example shows how to call the simulator with a fenics function
     for forcing with a different set of material parameters
@@ -54,8 +60,8 @@ def simulation(K_value):
     s = np.linspace(0.0,1.0,N)
 
     ODE_state = np.zeros(2*N_muscular + 2*N_controls)
-    ODE_state[2*N_muscular:2*N_muscular + N_controls] = 1.0
-    ODE_state[2*N_muscular + N_controls:2*N_muscular + 2*N_controls] = -1.0
+    ODE_state[2*N_muscular: 2*N_muscular + N_controls] = 0.5
+    ODE_state[2*N_muscular + N_controls: 2*N_muscular + 2*N_controls] = -0.5
 
     kappa_init = np.zeros(N)
 
@@ -70,7 +76,7 @@ def simulation(K_value):
 
     # set material parameters
     MP = MaterialParameters(
-        K=K_value,  # ratio of drag coefficients
+        K=k_value,  # ratio of drag coefficients
         K_rot=1.0,  # rotational drag coefficient
         A=e,  # bending rigidity
         B=eta_tilde,  # bending viscosity
@@ -104,7 +110,29 @@ def simulation(K_value):
     kappas = []
     worm_positions = []
 
-    while t < T:
+    peak_times = []
+
+    periods = []
+    peak_heights = []
+
+
+    consecutive_required = 3    # require 3 converged periods
+
+    n_converged = 0
+
+    extra_cycles = 3
+    termination_time = None
+
+    mid_idx = N // 2
+
+    prev_curvatures = []
+    prev_times = []
+
+    times = []
+
+    peak_indices = []
+    
+    while True:
 
         sols = solve_ivp(ODEs, (t, t+dt), ODE_state, method="RK45",
                         max_step=dt,args=(kappa_init,))
@@ -113,14 +141,19 @@ def simulation(K_value):
 
         A_V = ODE_state[0:N_muscular]
         A_D = ODE_state[N_muscular:2*N_muscular]
+        V_V = ODE_state[2*N_muscular: 2*N_muscular + N_controls]
+        V_D = ODE_state[2*N_muscular + N_controls: 2*N_muscular + 2*N_controls]
+
+            
 
 
         t += dt
-    
+        # print(np.round(t,2))
 
         repeat_factor = N // N_muscular
-        betas = sigma(A_V) - sigma(A_D)        
+        betas = A_V - A_D       
         betas = np.repeat(betas, repeat_factor)
+        # print("betas: ", np.round(betas[N//2], 2), "A_V: ", np.round(A_V[N_muscular // 2], 2), "A_D", np.round(A_D[N_muscular // 2],2))
 
         # update control
         control[:] = [alpha_forcing(t, j) for j in range(N)]
@@ -155,11 +188,76 @@ def simulation(K_value):
         kappas.append(curvature_np.copy())
         kappa_init = curvature_np.copy()
 
+        times.append(t)
+
         #print(np.max(betas), np.max(kappa_init))
         
+
+        if t >= T:
+
+            prev_curvatures.append(curvature_np[mid_idx])
+            prev_times.append(t)
+
+            if times[-1] >= 20.0 and len(peak_times) == 0:
+                break
+
+            if t >= T_max:
+                print("Reached maximum time without convergence.")
+                break
+
+            if len(prev_curvatures) >= 3:
+
+                y0 = prev_curvatures[-3]
+                y1 = prev_curvatures[-2]
+                y2 = prev_curvatures[-1]
+
+                
+                if y1 > y0 and y1 > y2 and y1 > 0.1:
+
+                    peak_time = prev_times[-2]
+                    peak_times.append(peak_time)
+                    peak_heights.append(y1)
+                    peak_indices.append(len(times) - 2)
+
+                    
+                    print(f"Peak at {peak_time:.3f}")
+
+                    if len(peak_times) >= 2:
+
+                        
+                        period = peak_times[-1] - peak_times[-2]
+                        periods.append(period)
+
+                        print(f"Period = {period:.3f}")
+
+                        if len(periods) >= consecutive_required:
+
+                            recent_periods = np.array(periods[-consecutive_required:])
+
+                            mean_period = np.mean(recent_periods)
+
+                            period_error = (np.max(np.abs(recent_periods - mean_period)) / mean_period)
+
+                            print(f"Period error = {period_error:.4f}")
+
+                            if termination_time is None and period_error < 0.01:
+                                termination_time = (t + extra_cycles * mean_period)
+
+                                print(f"Converged. " f"Stopping at {termination_time:.3f}")
+                                mean_period = np.mean(periods[-consecutive_required:])
+
+                                termination_time = (t + extra_cycles * mean_period)
+
+                                print(f"Converged. " f"Stopping at {termination_time:.3f}")
+
+        if termination_time is not None and t >= termination_time:
+            break
+
+
+
     kappas = np.array(kappas)
     worm_positions = np.array(worm_positions)
-    return worm_positions, kappas.T
+    return worm_positions, kappas.T, np.array(times), peak_heights, peak_times, peak_indices
 
 
 
@@ -172,12 +270,12 @@ if __name__ == "__main__":
     
     for i, K in enumerate(K_vals):
         print("K ", K)
-        worm_positions, curvatures = simulation(K)
+        worm_positions, curvatures, times, peak_heights, peak_times, peak_indices = simulation(K)
 
         maxcurv = np.max(curvatures)
         maxcurvs[i] = maxcurv
-        
-        wave, freq = Hilbert_Transform(curvatures, N, N_controls, t_eval)
+
+        wave, freq = lin_reg_wavelength(curvatures, times, N, N_controls)        
         
         wavelengths[i] = wave
         frequencies[i] = freq

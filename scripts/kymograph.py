@@ -29,16 +29,25 @@ def lin_reg_wavelength(kappa, t_eval, n, n_controls):
 
     times, kappa_peaks = finding_peaks(kappa_reduced, t_eval, n_controls)
     
-    
+    mid = n_controls // 2
 
-    freqs = []
-    for i in range(kappa_reduced.shape[0]):
-        peaks, _ = find_peaks(kappa_reduced[i, :], height=0.1)
-        peak_times = t_eval[peaks]
-        periods = np.diff(peak_times)
-        freqs.append(1.0 / np.mean(periods))
-    
-    freq = np.mean(freqs)
+    peaks, _ = find_peaks(kappa_reduced[mid, :], height=0.1)
+
+    peak_times = t_eval[peaks]
+
+    print("Peak times:")
+    print(peak_times)
+
+    print("Intervals:")
+    print(np.diff(peak_times))
+
+
+
+    peaks, _ = find_peaks(kappa_reduced[mid, :], height=0.1)
+
+    peak_times = t_eval[peaks]
+
+    freq = 1.0 / np.mean(np.diff(peak_times))
 
     heights = [(i + 0.5) / n_controls for i in range(n_controls)]
     wavelengths = []
@@ -86,7 +95,7 @@ def lin_reg_wavelength(kappa, t_eval, n, n_controls):
         plt.ylabel('Body length (mm)', size=12)
         plt.title('Kymograph of a Recovered C. elegans in Agar', size=16)
         plt.plot(x, y, 'bo')
-        plt.show()"""
-                
+        plt.show()
+        """        
     norm_wave = np.mean(wavelengths)
     return norm_wave, freq

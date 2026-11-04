@@ -14,7 +14,7 @@ from simple_worm.material_parameters import MaterialParameters, MaterialParamete
 from simple_worm.worm import Worm
 from simple_worm.util import f2n, v2f
 
-
+from scipy.optimize import KrylovJacobian
 
 import sys
 from pathlib import Path
@@ -25,10 +25,12 @@ from scripts.hilbert_calc import *
 from scripts.simple_worm_viewer_pyqtgraph import view_worm_pyqtgraph
 from scripts.curvature_viewer import view_curvature_pyqtgraph
 
+from scipy.sparse.linalg import eigs
 
 from pathlib import Path
 import time
-
+tick = time.time()
+            
 # Outputs directory
 OUTPUT_DIR = Path("outputs")
 OUTPUT_DIR.mkdir(exist_ok=True)
@@ -48,74 +50,93 @@ from scipy.optimize._numdiff import approx_derivative
 def residual(state, I, epsilon_p):
     return ODEs(0.0, state, I, epsilon_p)
 
+n_states = 108
+n_guesses = 10
 
-amp_vals = np.full((len(epsilon_p_vals), len(I_vals)), np.nan, dtype=float)
-max_eig_vals = np.full((len(epsilon_p_vals), len(I_vals)), np.nan, dtype=float)
-max_imag_vals = np.full((len(epsilon_p_vals), len(I_vals)), np.nan, dtype=float)
+a = -5
+b = 5
 
-for i, eps in enumerate(epsilon_p_vals):
-    print("epsilon_p: ", np.round(eps, 2))
-    for j, I in enumerate(I_vals):
-        print("I: ", np.round(I, 2))
-        n_state = 108
-        x0 = np.zeros(n_state)
+x_guesses = a + (b - a) * np.random.rand(n_guesses, n_states)
 
-        #x0[2*N_muscular: 2*N_muscular + N_controls] = 0.5
-        #x0[2*N_muscular + N_controls: 2*N_muscular + 2*N_controls] = -0.5
-        
+equilibrias = np.full(([len(x_guesses), len(I_vals), len(epsilon_p_vals), n_states]), np.nan, dtype=float)
+amp_vals = np.full(([len(x_guesses), len(I_vals), len(epsilon_p_vals)]), np.nan, dtype=float)
+max_eig_vals = np.full(([len(x_guesses), len(I_vals), len(epsilon_p_vals)]), np.nan, dtype=float)
+max_imag_vals = np.full(([len(x_guesses), len(I_vals), len(epsilon_p_vals)]), np.nan, dtype=float)
 
-        sol = root(residual, x0, args=(I, eps),method="hybr")
+for i, x_guess in enumerate(x_guesses):
+    print(i)
 
-        x_eq = sol.x
+    for k, eps in enumerate(epsilon_p_vals):
+            
+        x = x_guess
 
-        J = approx_derivative(lambda x: residual(x, I, eps), x_eq)
-        eigs = np.linalg.eigvals(J)
-        max_real_part = np.max(np.real(eigs))
-        print("Max real part of eigenvalues: ", max_real_part)
+        for j, I in enumerate(I_vals):
+            sol = root(residual, x, args=(I,eps,), method='hybr')
+            if not sol.success:
+                continue
 
-        max_eig_vals[i, j] = max_real_part
+            res = residual(sol.x,I,eps)
 
-        max_imag_part = np.max(np.imag(eigs))
-        print("Max imaginary part of eigenvalues: ", max_imag_part)
+            if np.linalg.norm(res) > 1e-8:
+                continue
 
-        max_imag_vals[i, j] = max_imag_part
+            x = sol.x
+            
+            state_eq = sol.x
+                        
+            J = approx_derivative(lambda x: residual(x, I, eps), state_eq)
+            
+                                    
+            eigvals = np.linalg.eigvals(J)
+            
+            max_eig_vals[i,j,k] = np.max(np.real(eigvals))
+            max_imag_vals[i,j,k] = np.max(np.imag(eigvals))
+    
+            equilibrias[i, j, k, :] = state_eq
 
-        idx = np.argsort(np.real(eigs))[::-1]
-        print(x_eq[96:102])   # ventral neurons
-        print(x_eq[102:108])  # dorsal neurons
-
-        kappa = x_eq[0:48] - x_eq[48:96]
-
-        amp = np.max(kappa) - np.min(kappa)
-        amp_vals[i, j] = amp
-
-        print("amp: ", amp)
-
-plt.figure(figsize=(10, 6))
-plt.imshow(amp_vals, extent=[I_vals[0], I_vals[-1], epsilon_p_vals[0], epsilon_p_vals[-1]], origin='lower', aspect='auto', cmap='bwr')
-cbar = plt.colorbar(label=r'Amplitude of Kappa')
-cbar.ax.yaxis.label.set_size(12)
-plt.xlabel("I")
-plt.ylabel("Amplitude of Kappa")
-plt.title("Amplitude of Kappa vs I for epsilon_p = {}".format(eps))
-plt.show()
+print(time.time() - tick)
 
 
 plt.figure(figsize=(10, 6))
-plt.imshow(max_eig_vals, extent=[I_vals[0], I_vals[-1], epsilon_p_vals[0], epsilon_p_vals[-1]], origin='lower', aspect='auto', cmap='bwr')
-cbar = plt.colorbar(label=r'Max Real Part of Eigenvalues')
-cbar.ax.yaxis.label.set_size(12)
-plt.xlabel("I")
-plt.ylabel("Max Real Part of Eigenvalues")
-plt.title("Max Real Part of Eigenvalues vs I for epsilon_p = {}".format(eps))
-plt.axhline(0, color='red', linestyle='--', label='Re(eigenvalue) = 0')
+for i, x_guess in enumerate(x_guesses):
+    plt.scatter(I_vals, max_eig_vals[i, :], marker='o', color='black', alpha=0.1)
+plt.xlabel(r'$I$')
+plt.ylabel(r'Max real part of eigenvalues')
 plt.show()
 
 plt.figure(figsize=(10, 6))
-plt.imshow(max_imag_vals, extent=[I_vals[0], I_vals[-1], epsilon_p_vals[0], epsilon_p_vals[-1]], origin='lower', aspect='auto', cmap='bwr')
-cbar = plt.colorbar(label=r'Max Imaginary Part of Eigenvalues')
-cbar.ax.yaxis.label.set_size(12)
-plt.xlabel("I")
-plt.ylabel("Max Imaginary Part of Eigenvalues")
-plt.title("Max Imaginary Part of Eigenvalues vs I for epsilon_p = {}".format(eps))
+for i, x_guess in enumerate(x_guesses):
+    plt.scatter(I_vals, max_imag_vals[i, :], marker='o', color='black', alpha=0.1)
+plt.xlabel(r'$I$')
+plt.ylabel(r'Max imaginary part of eigenvalues')
+plt.show()
+
+plt.figure(figsize=(10, 6))
+
+for i, x_guess in enumerate(x_guesses):
+
+    eps_idx = 0
+
+    stable = max_eig_vals[i, :, eps_idx] < 0
+    unstable = max_eig_vals[i, :, eps_idx] > 0
+
+    plt.scatter(
+        I_vals[stable],
+        equilibrias[i, :, eps_idx, 0][stable],
+        color="blue",
+        alpha=0.1,
+        s=10,
+)
+
+    plt.scatter(
+        I_vals[unstable],
+        equilibrias[i, :, eps_idx, 0][unstable],
+        color='red',
+        alpha=0.1,
+        s=10
+    )
+
+plt.xlabel(r'$I$')
+plt.ylabel(r'Equilibrium voltage $V$')
+plt.title(r'Equilibrium voltage $V$ vs $I$')
 plt.show()

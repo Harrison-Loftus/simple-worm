@@ -22,7 +22,7 @@ from scripts.hilbert_calc import Hilbert_Transform
 from scripts.simple_worm_viewer_pyqtgraph import view_worm_pyqtgraph
 from scripts.curvature_viewer import view_curvature_pyqtgraph
 
-from scripts.Injury.ODEs import *
+from scripts.Archive.Injury.ODEs import *
 
 from pathlib import Path
 import time

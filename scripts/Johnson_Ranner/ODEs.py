@@ -33,6 +33,7 @@ W_p = proprioception_matrix(N, range_val)
 
 W_p = W_p / np.maximum(W_p.sum(axis=1, keepdims=True), 1)
 
+print(W_p)
 
 W_g = np.zeros((N, N), float)
 for i in range(N):
@@ -68,7 +69,7 @@ def ODEs(t, state, kappa):
     
     epsilon_g = 0.0
     epsilon_p = 1.0
-    c_p = 0.5
+    c_p = 0.0
     P = W_p @ kappa
 
     epsilon_g * W_g 

@@ -13,7 +13,6 @@ from simple_worm.material_parameters import MaterialParameters, MaterialParamete
 from simple_worm.worm import Worm
 from simple_worm.util import f2n, v2f
 
-from velocity_calc import Average_Velocity
 from hilbert_calc import Hilbert_Transform
 from simple_worm_viewer_pyqtgraph import view_worm_pyqtgraph
 
@@ -33,7 +32,7 @@ import time
 
 # Parameters
 
-T = 30.0  # Final time - recommend several undulations
+T = 10.0  # Final time - recommend several undulations
 dt = 1.0e-2  # Time step - recommend ~1.0e-2 or lower
 n_timesteps = int(T / dt)
 
@@ -303,7 +302,7 @@ def example4():
     # wave parameters
     Amp = 10.0
     lam = 0.66
-    omega = 0.1
+    omega = 0.27
 
     # specific forcing function
     def alpha_forcing(t, j):
@@ -371,14 +370,12 @@ if __name__ == "__main__":
     print(worm_positions.shape)
 
     maxcurv = np.max(curvatures)
-    velocity = Average_Velocity(worm_positions, t_eval)
     wave, freq = Hilbert_Transform(curvatures, N, N_controls, t_eval)
 
     print("Wavelength: ", np.round(wave, 2))
     print("Frequency Hz: ", np.round(freq, 2))
     print("Max curvature: ", np.round(maxcurv, 2))
-    print("Average velocity mm/s: ", np.round(velocity, 2))
-
+    
     wavelength_k, freq_k = lin_reg_wavelength(curvatures, t_eval, N, N_controls)
 
     print("kymogram wavelength ", wavelength_k)
@@ -387,7 +384,7 @@ if __name__ == "__main__":
 
     print("time: ", np.round(tock - tick, 2))
 
-    anim = create_worm_animation(worm_positions, dt)
-    anim.save(OUTPUT_DIR / f"{SCRIPT_NAME} - worm.mp4", writer="ffmpeg", fps = int(round(1/dt)), dpi=150)
+    #anim = create_worm_animation(worm_positions, dt)
+    #anim.save(OUTPUT_DIR / f"{SCRIPT_NAME} - worm.mp4", writer="ffmpeg", fps = int(round(1/dt)), dpi=150)
 
-    #view_worm_pyqtgraph(worm_positions, dt)
+    view_worm_pyqtgraph(worm_positions, dt)

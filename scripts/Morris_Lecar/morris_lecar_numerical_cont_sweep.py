@@ -4,6 +4,7 @@ import numpy as np
 
 import numpy as np
 from scipy.integrate import solve_ivp
+from scipy.signal import find_peaks
 import matplotlib.pyplot as plt
 
 import sys
@@ -15,6 +16,10 @@ OUTPUT_DIR = Path("outputs")
 OUTPUT_DIR.mkdir(exist_ok=True)
 
 SCRIPT_NAME = Path(__file__).stem
+
+T = 2000.0
+dt = 0.01
+T_eval = np.arange(0, T, dt)
 
 #------Parameters------
 C    = 20.0
@@ -63,15 +68,59 @@ x_guess_vals = [[i, j] for i in np.linspace(-60.0, 40.0, 100) for j in np.linspa
 
 I_vals = np.linspace(-10.0, 200.0, 100)
 
+I_extra = np.linspace(-10,-8, 100)
+
+I_extra2 = np.linspace(36, 44, 100)
+
+I_vals = np.concatenate((I_extra, I_vals, I_extra2))
+
+print(I_vals)
+
 max_eig_vals = np.full([len(x_guess_vals), len(I_vals)], np.nan)
 max_imag_vals = np.full([len(x_guess_vals), len(I_vals)], np.nan)
 equilibrias = np.full([len(x_guess_vals), len(I_vals)], np.nan)
 
 
-for i, x_guess in enumerate(x_guess_vals):
+peak_periodic_orbits = np.full([len(I_vals)], np.nan)
+min_periodic_orbits = np.full([len(I_vals)], np.nan)
 
-    for j, I in enumerate(I_vals):
 
+def periodic_orbit_finder(x_guess, I, T_eval):
+    sol = solve_ivp(morris_lecar, [0, T_eval[-1]], x_guess, args=(I,), t_eval=T_eval)
+    state_final = sol.y[:,-1]
+    V = sol.y[0]
+    V_peaks, _ = find_peaks(V)
+    V_negative_peaks, _ = find_peaks(-V)
+    #print(I, np.min(V), np.max(V))
+
+    peak_vals = V[V_peaks]
+    max_vals = np.diff(peak_vals[-len(peak_vals)//4:])
+
+    
+    minpeak_vals = V[V_negative_peaks]
+    min_vals = np.diff(minpeak_vals[-len(minpeak_vals)//4:])
+
+    avg_peak = np.mean(peak_vals[-len(peak_vals)//4:])
+    avg_min = np.mean(minpeak_vals[-len(minpeak_vals)//4:])
+
+
+    """if np.max(max_vals) > 1e-1:
+        return np.nan, np.nan
+    else:
+    """    
+    return avg_peak, avg_min, state_final
+
+state = [0.0,0.0]
+for j, I in enumerate(I_vals):
+   
+    peak_orb, min_orb, state_final = periodic_orbit_finder(state, I, T_eval)
+    state = state_final
+
+    peak_periodic_orbits[j] = peak_orb
+    min_periodic_orbits[j] = min_orb
+    print(np.round(I,2), peak_orb, min_orb)
+
+    for i, x_guess in enumerate(x_guess_vals):    
         sol = root(residual, x_guess, args=(I,), method='lm')
 
         res = residual(sol.x, I)
@@ -79,8 +128,7 @@ for i, x_guess in enumerate(x_guess_vals):
         if np.linalg.norm(res) > 1e-8:
             continue
 
-        if not sol.success:
-           continue
+
         
         state_eq = sol.x
 
@@ -93,6 +141,8 @@ for i, x_guess in enumerate(x_guess_vals):
         max_imag_vals[i, j] = np.max(np.imag(eigvals))
 
         equilibrias[i, j] = state_eq[0]
+
+
         
 plt.figure(figsize=(10, 6))
 for i, x_guess in enumerate(x_guess_vals):
@@ -104,12 +154,14 @@ plt.show()
 plt.figure(figsize=(10, 6))
 for i, x_guess in enumerate(x_guess_vals):
     plt.scatter(I_vals, max_imag_vals[i, :], marker='o', color='black', alpha=0.1)
+
 plt.xlabel(r'$I$')
 plt.ylabel(r'Max imaginary part of eigenvalues')
 plt.show()
 
-plt.figure(figsize=(10, 6))
 
+
+plt.figure(figsize=(10, 6))
 for i, x_guess in enumerate(x_guess_vals):
 
     stable = max_eig_vals[i, :] < 0
@@ -130,6 +182,9 @@ for i, x_guess in enumerate(x_guess_vals):
         alpha=0.1,
         s=10
     )
+
+plt.scatter(I_vals, peak_periodic_orbits, marker='o', color='blue')
+plt.scatter(I_vals, min_periodic_orbits, marker='o', color='blue')
 
 plt.xlabel(r'$I$')
 plt.ylabel(r'Equilibrium voltage $V$')

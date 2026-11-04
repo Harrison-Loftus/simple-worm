@@ -34,7 +34,7 @@ OUTPUT_DIR.mkdir(exist_ok=True)
 
 SCRIPT_NAME = Path(__file__).stem
 
-T = 30.0  # Final time - recommend several undulations
+T = 100.0  # Final time - recommend several undulations
 
 dt = 1.0e-2  # Time step - recommend ~1.0e-2 or lower
 
@@ -72,7 +72,7 @@ def example4():
 
     # set material parameters
     MP = MaterialParameters(
-        K=K_agar,  # ratio of drag coefficients
+        K=8.1,  # ratio of drag coefficients
         K_rot=1.0,  # rotational drag coefficient
         A=e,  # bending rigidity
         B=eta_tilde,  # bending viscosity
@@ -170,6 +170,7 @@ if __name__ == "__main__":
     tick = time.time()
 
     worm_positions, curvatures = example4()
+    print(np.shape(worm_positions))
 
     maxcurv = np.max(curvatures)
 
