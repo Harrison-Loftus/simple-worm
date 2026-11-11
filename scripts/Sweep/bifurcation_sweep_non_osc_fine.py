@@ -2,12 +2,12 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from scripts.Bible.simulation_config import *
-from scripts.Bible.neural_model import *
-from scripts.Bible.run_simulation import *
-from scripts.Bible.kinematic_analysis import *
+from scripts.Fundamental.simulation_config import *
+from scripts.Fundamental.neural_model import *
+from scripts.Fundamental.run_simulation import *
+from scripts.Fundamental.kinematic_analysis import *
 
-from scripts.Bible.animation import *
+from scripts.Fundamental.animation import *
 
 OUTPUT_DIR = Path("outputs/FOR_PAPER/Bifurcation")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)

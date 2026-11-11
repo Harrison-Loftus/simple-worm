@@ -190,7 +190,7 @@ def example4(config, ODEs):
 
 
         t += dt
-        # print(np.round(t,2))
+        print(np.round(t,2))
 
         repeat_factor = N // N_muscular
         betas = A_V - A_D       
