@@ -18,9 +18,9 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
 
-from scripts.hilbert_calc import Hilbert_Transform
-from scripts.simple_worm_viewer_pyqtgraph import view_worm_pyqtgraph
-from scripts.curvature_viewer import view_curvature_pyqtgraph
+from scripts.Archive.hilbert_calc import Hilbert_Transform
+from scripts.Archive.simple_worm_viewer_pyqtgraph import view_worm_pyqtgraph
+from scripts.Archive.curvature_viewer import view_curvature_pyqtgraph
 
 from scripts.Archive.Error_Testing.Numerical.Spatial.ODEs import *
 

@@ -27,7 +27,7 @@ class SimulationConfig:
     N_muscular: int = 48
 
     # neural coupling
-    epsilon_p: float = 0.5
+    epsilon_p: float = 1.0
     epsilon_g: float = 0.0
     range_percentage: float = 0.5
 
@@ -48,6 +48,8 @@ class SimulationConfig:
     convergence_tol: float = 0.01
     consecutive_required: int = 3
     extra_cycles: int = 3
+
+    K_override: float | None = None
 
     @property
     def K_water(self):

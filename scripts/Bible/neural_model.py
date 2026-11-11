@@ -20,6 +20,7 @@ def ODEs(t, state, kappa, config):
 
         return W
 
+    W_p = proprioception_matrix(config)
 
     def gap_junction_matrix(config):
         W_g = np.zeros((config.N, config.N), float)
@@ -34,6 +35,7 @@ def ODEs(t, state, kappa, config):
                     W_g[i, j] = 1
         return W_g
 
+    W_g = gap_junction_matrix(config)
 
     def sigma(A, config):
         c_m = config.c_m

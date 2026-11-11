@@ -29,13 +29,13 @@ FOR_PAPER.mkdir(exist_ok=True)
 
 SCRIPT_NAME = Path(__file__).stem
 
-from scripts.hilbert_calc import Hilbert_Transform
-from scripts.simple_worm_viewer_pyqtgraph import view_worm_pyqtgraph
-from scripts.curvature_viewer import view_curvature_pyqtgraph
-from scripts.kymograph import *
+from scripts.Archive.hilbert_calc import Hilbert_Transform
+from scripts.Archive.simple_worm_viewer_pyqtgraph import view_worm_pyqtgraph
+from scripts.Archive.curvature_viewer import view_curvature_pyqtgraph
+from scripts.Archive.kymograph import *
 
-from scripts.Johnson_Ranner.ODEs import *
-from scripts.parameters import *
+from scripts.Archive.Johnson_Ranner.ODEs import *
+from scripts.Archive.parameters import *
 
 T = 10.0  # Final time - recommend several undulations
 T_max = 100.0
