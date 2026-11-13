@@ -3,8 +3,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from scripts.Fundamental.simulation_config import *
-from scripts.Fundamental.neural_model import *
-from scripts.Fundamental.run_simulation import *
+from scripts.Fundamental.neuromuscular import *
+from scripts.Fundamental.mechanical import *
 from scripts.Fundamental.kinematic_analysis import *
 
 from scripts.Fundamental.animation import *
@@ -12,7 +12,7 @@ from scripts.Fundamental.animation import *
 OUTPUT_DIR = Path("outputs/FOR_PAPER/Bifurcation")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-I_vals = np.arange(0.2, 0.45, 0.05)
+I_vals = np.arange(0.2, 0.408, 0.008)
 
 n = 0
 
@@ -25,7 +25,7 @@ velocities = np.full((len(I_vals),), np.nan, dtype=float)
 for i, I_val in enumerate(I_vals):
     n+=1
     print(f'Simulation {n}/{len(I_vals)}: I = {I_val:.3f}')
-    config2 = SimulationConfig(I=I_val, T=100, max_time=200)
+    config2 = SimulationConfig(I=I_val)
 
     worm_positions, kappas, times, peak_heights, peak_times, peak_indices, A_V_vals, A_D_vals, V_V_vals, V_D_vals  = example4(config2, ODEs)
 

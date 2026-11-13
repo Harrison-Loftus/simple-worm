@@ -192,9 +192,12 @@ def example4(config, ODEs):
         t += dt
         print(np.round(t,2))
 
-        repeat_factor = N // N_muscular
-        betas = A_V - A_D       
-        betas = np.repeat(betas, repeat_factor)
+        betas = A_V - A_D
+
+        muscle_indices = np.floor(np.arange(N) * N_muscular / N).astype(int)
+
+        betas = betas[muscle_indices]
+                
         # print("betas: ", np.round(betas[N//2], 2), "A_V: ", np.round(A_V[N_muscular // 2], 2), "A_D", np.round(A_D[N_muscular // 2],2))
 
         # update control
