@@ -3,7 +3,7 @@ from dataclasses import dataclass, replace
 
 @dataclass(frozen=True)
 class SimulationConfig:
-    import numpy as np
+
     # physical properties
     L: float = 1.0
     E: float = 0.1
@@ -53,12 +53,22 @@ class SimulationConfig:
     K_override: float | None = None
 
     # initial state
-    ODE_state = np.zeros(2*N_muscular + 2*N_controls)
-    ODE_state[2*N_muscular: 2*N_muscular + N_controls] = 0.0
-    ODE_state[2*N_muscular + N_controls: 2*N_muscular + 2*N_controls] = -0.0
+    @property
+    def ODE_state(self):
+        import numpy as np
+        state = np.zeros(2*self.N_muscular + 2*self.N_controls)
 
-    ODE_state: np.ndarray = ODE_state
+        state[
+            2*self.N_muscular:
+            2*self.N_muscular + self.N_controls
+        ] = 0.5
 
+        state[
+            2*self.N_muscular + self.N_controls:
+        ] = -0.5
+
+        return state
+    
     @property
     def K_water(self):
         return self.C_N / self.C_T

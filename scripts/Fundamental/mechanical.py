@@ -50,10 +50,7 @@ def example4(config, ODEs):
     n_timesteps = int(T / dt)
     s = np.linspace(0.0,1.0,N)
 
-    ODE_state = np.zeros(2*N_muscular + 2*N_controls)
-    ODE_state[2*N_muscular: 2*N_muscular + N_controls] = 0.0
-    ODE_state[2*N_muscular + N_controls: 2*N_muscular + 2*N_controls] = -0.0
-
+    ODE_state = config.ODE_state
     kappa_init = np.zeros(N)
 
     
