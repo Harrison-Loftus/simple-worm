@@ -51,8 +51,8 @@ def example4(config, ODEs):
     s = np.linspace(0.0,1.0,N)
 
     ODE_state = np.zeros(2*N_muscular + 2*N_controls)
-    ODE_state[2*N_muscular: 2*N_muscular + N_controls] = 0.5
-    ODE_state[2*N_muscular + N_controls: 2*N_muscular + 2*N_controls] = -0.5
+    ODE_state[2*N_muscular: 2*N_muscular + N_controls] = 0.0
+    ODE_state[2*N_muscular + N_controls: 2*N_muscular + 2*N_controls] = -0.0
 
     kappa_init = np.zeros(N)
 
@@ -211,23 +211,23 @@ def example4(config, ODEs):
         vector_curvature = ret.kappa_expr
 
         # other variables computed
-        tangent = ret.e0
         normal = ret.e1
 
         # scalar curvature
         alpha = ufl.dot(vector_curvature, normal)
+        
 
         # using the variables to compute interesting quantities
-        curvature_form = fem.form(0.5 * alpha**2 * ufl.dx)
-        total_curvature = fem.assemble_scalar(curvature_form)
         #print(t, total_curvature)
 
         ret_np = ret.to_numpy()
-        x_np = ret_np.x
-        x_np_frame = x_np.T
-        
-        curvature_np = ret_np.alpha
-        
+        # x_np = ret_np.x
+        # x_np_frame = x_np.T
+        x_np_frame = worm.get_x().T
+
+        # curvature_np = ret_np.alpha
+        curvature_np = worm.get_alpha()
+
         
         worm_positions.append(x_np_frame.copy())
         kappas.append(curvature_np.copy())

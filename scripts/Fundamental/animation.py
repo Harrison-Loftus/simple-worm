@@ -8,9 +8,9 @@ print("ffmpeg available:", animation.writers.is_available("ffmpeg"))
 from IPython.display import HTML
 
 
-def create_worm_animation(worm_positions, config):
+def create_worm_animation(worm_positions, dt):
 
-    dt = config.dt
+    
 
     # worm_positions has shape (N_frames, N_points, 2)
     N_frames = worm_positions.shape[0]
